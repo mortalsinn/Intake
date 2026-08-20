@@ -150,16 +150,80 @@
             ? `<textarea id="f-${field.id}" placeholder="${field.placeholder || ''}"></textarea>`
             : `<input id="f-${field.id}" type="${field.type}" placeholder="${field.placeholder || ''}"
                  autocapitalize="${field.autocapitalize || 'off'}" autocorrect="off" spellcheck="false"
-                 ${field.type === 'email' ? 'inputmode="email"' : ''} ${field.type === 'tel' ? 'inputmode="tel"' : ''} />`}
+                 ${field.type === 'email' ? 'inputmode="email"' : ''} ${field.type === 'tel' ? 'inputmode="tel" maxlength="16"' : ''} />`}
           <div class="err">This one's required.</div>`;
         const input = wrap.querySelector('input, textarea');
-        input.addEventListener('input', () => {
+
+        input.addEventListener('input', (e) => {
+            if (field.type === 'tel') {
+                // Backspacing over ")" or "-" must eat a digit, or the mask
+                // would instantly redraw the same string and trap the cursor.
+                let v = input.value;
+                if (e.inputType === 'deleteContentBackward' && /\D$/.test(v)) {
+                    v = v.replace(/\D+$/, '').slice(0, -1);
+                }
+                input.value = formatPhone(v);
+            }
             state[field.id] = input.value;
             wrap.classList.remove('invalid');
             $('#form-err')?.classList.remove('show');
         });
+
+        // Tidy-on-blur: names and cities get their capitals, emails get
+        // trimmed and lowercased. Never mid-typing — fighting the keyboard
+        // loses; fixing what they left behind wins.
+        input.addEventListener('blur', () => {
+            if (field.type === 'email') input.value = input.value.trim().toLowerCase();
+            else if (field.autocapitalize === 'words') input.value = capWords(input.value);
+            if (input.value !== (state[field.id] || '')) state[field.id] = input.value;
+        });
+
+        // Return key hops to the next field instead of submitting a
+        // half-finished form (the iPad keyboard's "go" would otherwise).
+        if (!isArea) {
+            input.addEventListener('keydown', (e) => {
+                if (e.key !== 'Enter') return;
+                e.preventDefault();
+                const inputs = [...form.querySelectorAll('input, textarea')];
+                inputs[inputs.indexOf(input) + 1]?.focus();
+            });
+        }
+
+        // One-tap suggestions (e.g. nearby cities) — typing is the enemy.
+        if (Array.isArray(field.suggest) && field.suggest.length) {
+            const sug = document.createElement('div');
+            sug.className = 'suggest';
+            for (const opt of field.suggest) {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'chip';
+                b.textContent = opt;
+                b.addEventListener('click', () => {
+                    input.value = opt;
+                    state[field.id] = opt;
+                    wrap.classList.remove('invalid');
+                });
+                sug.appendChild(b);
+            }
+            wrap.appendChild(sug);
+        }
         return wrap;
     }
+
+    // (403) 555-0123, progressively as digits arrive; tolerates a leading 1.
+    function formatPhone(raw) {
+        let d = String(raw).replace(/\D/g, '').slice(0, 11);
+        let pre = '';
+        if (d.length === 11 && d[0] === '1') { pre = '1 '; d = d.slice(1); }
+        if (d.length > 10) d = d.slice(0, 10);
+        if (d.length <= 3) return pre + d;
+        if (d.length <= 6) return `${pre}(${d.slice(0, 3)}) ${d.slice(3)}`;
+        return `${pre}(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+    }
+
+    // Uppercase the first letter of each word; never lowercase what's there,
+    // so "McLean" typed correctly stays "McLean".
+    const capWords = (s) => s.replace(/(^|[\s\-'])(\p{Ll})/gu, (m, p, c) => p + c.toUpperCase());
 
     function render() {
         document.title = `${config.show.name} — Ironwood Stair & Rail`;
@@ -189,16 +253,35 @@
 
     // ---------- validate + submit ----------
 
+    // Why a message per problem: at a busy booth nobody reads a generic
+    // "check the form" — the field itself has to say what's wrong.
+    function fieldProblem(field, v, has) {
+        if (field.required && !has) {
+            return field.type === 'consent'
+                ? "Please tick this box so we're allowed to follow up."
+                : "This one's required.";
+        }
+        if (!has) return null;
+        if (field.type === 'tel' && String(v).replace(/\D/g, '').length < 7) {
+            return 'That number looks short — mind double-checking?';
+        }
+        if (field.type === 'email' && !/^\S+@\S+\.\S+$/.test(String(v).trim())) {
+            return "That email doesn't look complete.";
+        }
+        return null;
+    }
+
     function validate() {
         let ok = true;
         let firstBad = null;
         for (const field of config.fields) {
             const v = state[field.id];
             const has = Array.isArray(v) ? v.length > 0 : v === true || (v != null && String(v).trim() !== '');
-            const bad = field.required && !has;
+            const problem = fieldProblem(field, v, has);
             const el = form.querySelector(`.field[data-id="${field.id}"]`);
-            el.classList.toggle('invalid', bad);
-            if (bad) { ok = false; firstBad = firstBad || el; }
+            if (problem) el.querySelector('.err').textContent = problem;
+            el.classList.toggle('invalid', !!problem);
+            if (problem) { ok = false; firstBad = firstBad || el; }
         }
         const errBox = $('#form-err');
         if (config.requirePhoneOrEmail && !String(state.phone || '').trim() && !String(state.email || '').trim()) {
@@ -211,14 +294,19 @@
         return ok;
     }
 
+    let submitting = false;
     form.addEventListener('submit', (e) => {
         e.preventDefault();
+        if (submitting) return; // a double-tap must not enter two leads
         if (!validate()) return;
+        submitting = true;
+        setTimeout(() => { submitting = false; }, 1200);
 
         const record = {
             id: crypto.randomUUID(),
             submittedAt: new Date().toISOString(),
-            fields: { ...state },
+            fields: Object.fromEntries(Object.entries(state)
+                .map(([k, v]) => [k, typeof v === 'string' ? v.trim() : v])),
         };
         const queue = loadQueue();
         queue.push(record);
@@ -251,7 +339,13 @@
     attract.addEventListener('click', () => {
         attract.hidden = true;
         armIdle();
+        // The tap is a user gesture, so iOS allows the keyboard: first field
+        // ready the moment the visitor steps up.
+        form.querySelector('input')?.focus();
     });
+
+    // Staff shortcut: tapping the status pill forces a sync attempt now.
+    $('#sync-pill').addEventListener('click', flushQueue);
 
     // A visitor who wanders off mid-form shouldn't leave their half-typed
     // details on screen for the next person: after 90s of silence, wipe and

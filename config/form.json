@@ -13,9 +13,13 @@
   "fields": [
     { "id": "firstName", "label": "First name", "type": "text", "zoho": "First_Name", "autocapitalize": "words", "half": true },
     { "id": "lastName", "label": "Last name", "type": "text", "required": true, "zoho": "Last_Name", "autocapitalize": "words", "half": true },
-    { "id": "phone", "label": "Phone", "type": "tel", "zoho": "Phone", "half": true },
-    { "id": "email", "label": "Email", "type": "email", "zoho": "Email", "half": true },
-    { "id": "city", "label": "City / neighbourhood", "type": "text", "zoho": "City" },
+    { "id": "phone", "label": "Phone", "type": "tel", "zoho": "Phone", "half": true, "placeholder": "(403) 555-0123" },
+    { "id": "email", "label": "Email", "type": "email", "zoho": "Email", "half": true, "placeholder": "you@example.com" },
+    {
+      "id": "city", "label": "City / neighbourhood", "type": "text", "zoho": "City",
+      "autocapitalize": "words",
+      "suggest": ["Calgary", "Airdrie", "Cochrane", "Okotoks", "Chestermere", "Strathmore", "Acreage / rural"]
+    },
     {
       "id": "interests",
       "label": "What are you thinking about?",

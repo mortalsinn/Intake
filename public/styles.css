@@ -197,6 +197,21 @@ input:focus, textarea:focus {
   box-shadow: 0 3px 12px rgba(145, 119, 46, 0.4);
 }
 
+/* one-tap suggestion chips under an input */
+.suggest { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.chip {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink-soft);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  transition: transform 0.12s, border-color 0.15s, color 0.15s;
+}
+.chip:active { transform: scale(0.94); border-color: var(--bronze); color: var(--bronze-deep); }
+
 /* consent */
 .consent-row {
   display: flex;

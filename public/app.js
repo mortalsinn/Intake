@@ -148,7 +148,7 @@
         if (field.type === 'inspiration') {
             wrap.innerHTML = `
               <label class="title">${field.label}</label>
-              <button type="button" class="inspo-btn" id="inspiration-open">Browse inspiration photos</button>
+              <button type="button" class="inspo-btn" id="inspiration-open">${field.buttonLabel || 'Browse the Inspiration Gallery'}</button>
               <div class="inspo-picks" id="inspiration-picks"></div>`;
             wrap.querySelector('#inspiration-open').addEventListener('click', openGallery);
             // Re-render picks in case the visitor already chose some and the
@@ -300,6 +300,7 @@
                 sectionNo++;
                 const head = document.createElement('div');
                 head.className = 'section-head';
+                head.dataset.section = field.section;
                 head.style.setProperty('--i', i);
                 head.innerHTML = `<span class="section-num">${sectionNo}</span>
                                   <span class="section-title">${field.section}</span>`;
@@ -315,11 +316,64 @@
         errBox.className = 'form-err';
         form.appendChild(errBox);
 
-        const row = document.createElement('div');
-        row.className = 'submit-row';
-        row.innerHTML = `<button type="submit" class="submit">${config.show.submitLabel || 'Submit'}</button>`;
-        form.appendChild(row);
+        buildSteps();
+        showStep(0);
     }
+
+    // ---------- steps ----------
+
+    // Twelve questions in one column reads as an endless list however well it
+    // is spaced. The same questions across three short screens read as three
+    // small asks, and each screen is visibly finishable.
+    let stepNames = [];
+    let currentStep = 0;
+
+    function buildSteps() {
+        stepNames = [];
+        for (const f of config.fields) {
+            if (f.section && !stepNames.includes(f.section)) stepNames.push(f.section);
+        }
+        const bar = $('#steps');
+        bar.innerHTML = stepNames.map((name, i) =>
+            `<span class="step-pip" data-i="${i}"><i>${i + 1}</i>${name}</span>`).join('');
+    }
+
+    function showStep(i) {
+        currentStep = Math.max(0, Math.min(i, stepNames.length - 1));
+        const name = stepNames[currentStep];
+
+        for (const el of form.querySelectorAll('.field, .section-head')) {
+            const owner = el.classList.contains('section-head')
+                ? el.dataset.section
+                : (config.fields.find(f => f.id === el.dataset.id) || {}).section;
+            // Section headings are redundant once the step itself is titled.
+            el.hidden = el.classList.contains('section-head') || owner !== name;
+        }
+
+        for (const pip of $('#steps').children) {
+            const n = Number(pip.dataset.i);
+            pip.classList.toggle('on', n === currentStep);
+            pip.classList.toggle('done', n < currentStep);
+        }
+
+        $('#step-back').hidden = currentStep === 0;
+        $('#step-next').textContent = currentStep === stepNames.length - 1
+            ? (config.show.submitLabel || 'Submit')
+            : 'Continue';
+        $('#form-err')?.classList.remove('show');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /** Only the fields on this step — a visitor must not be told about
+     *  something they have not been shown yet. */
+    const fieldsOnStep = () => config.fields.filter(f => f.section === stepNames[currentStep]);
+
+    $('#step-back').addEventListener('click', () => showStep(currentStep - 1));
+    $('#step-next').addEventListener('click', () => {
+        if (!validate(fieldsOnStep())) return;
+        if (currentStep < stepNames.length - 1) showStep(currentStep + 1);
+        else form.requestSubmit();
+    });
 
     // ---------- validate + submit ----------
 
@@ -341,10 +395,10 @@
         return null;
     }
 
-    function validate() {
+    function validate(fields = config.fields) {
         let ok = true;
         let firstBad = null;
-        for (const field of config.fields) {
+        for (const field of fields) {
             const v = state[field.id];
             const has = Array.isArray(v) ? v.length > 0 : v === true || (v != null && String(v).trim() !== '');
             const problem = fieldProblem(field, v, has);
@@ -354,7 +408,9 @@
             if (problem) { ok = false; firstBad = firstBad || el; }
         }
         const errBox = $('#form-err');
-        if (config.requirePhoneOrEmail && !String(state.phone || '').trim() && !String(state.email || '').trim()) {
+        const checksContact = fields.some(f => f.id === 'phone' || f.id === 'email');
+        if (checksContact && config.requirePhoneOrEmail
+            && !String(state.phone || '').trim() && !String(state.email || '').trim()) {
             ok = false;
             errBox.textContent = 'Please provide a phone number or an email address so we can reach you.';
             errBox.classList.add('show');
@@ -476,8 +532,14 @@
             cell.className = 'g-cell' + (idx >= 0 ? ' on' : '');
             cell.innerHTML = `
               <img src="${photo.thumb}" alt="${(photo.alt || '').replace(/"/g, '&quot;')}" loading="lazy" />
-              <span class="g-tick">${idx >= 0 ? idx + 1 : ''}</span>`;
-            cell.addEventListener('click', () => toggleInspiration(photo.id));
+              <span class="g-tick">${idx >= 0 ? idx + 1 : ''}</span>
+              <span class="g-zoom" aria-label="View full screen">⤢</span>`;
+            cell.addEventListener('click', (e) => {
+                // Two intents on one tile, so they get separate targets: the
+                // corner glass opens the big view, the photo itself picks it.
+                if (e.target.closest('.g-zoom')) openLightbox(photo.id);
+                else toggleInspiration(photo.id);
+            });
             grid.appendChild(cell);
         }
         paintCount();
@@ -518,9 +580,61 @@
         if (btn) {
             btn.textContent = picked.length
                 ? `${picked.length} chosen — change`
-                : 'Browse inspiration photos';
+                : 'Browse the Inspiration Gallery';
         }
     }
+
+    // ---------- full-screen viewer ----------
+
+    let lightboxAt = -1;   // index within the CURRENT filter, so arrows respect it
+
+    function openLightbox(id) {
+        const list = visiblePhotos();
+        lightboxAt = list.findIndex(p => p.id === id);
+        if (lightboxAt < 0) return;
+        paintLightbox();
+        $('#lightbox').hidden = false;
+    }
+
+    function paintLightbox() {
+        const list = visiblePhotos();
+        const photo = list[lightboxAt];
+        if (!photo) return;
+        const img = $('#lb-img');
+        // Show the cached thumbnail instantly, then swap in the full-size
+        // image from the website once it arrives — no blank screen while a
+        // 500KB photograph loads over show wifi.
+        img.src = photo.thumb;
+        const full = new Image();
+        full.onload = () => { if (visiblePhotos()[lightboxAt]?.id === photo.id) img.src = full.src; };
+        full.src = photo.full;
+
+        img.alt = photo.alt || '';
+        $('#lb-alt').textContent = photo.alt || '';
+        $('#lb-prev').hidden = lightboxAt === 0;
+        $('#lb-next').hidden = lightboxAt >= list.length - 1;
+
+        const picked = chosenInspiration().includes(photo.id);
+        const btn = $('#lb-pick');
+        btn.textContent = picked ? '✓ Selected — tap to remove' : 'Select this photograph';
+        btn.classList.toggle('on', picked);
+    }
+
+    const closeLightbox = () => { $('#lightbox').hidden = true; };
+
+    $('#lb-close').addEventListener('click', closeLightbox);
+    $('#lightbox').addEventListener('click', (e) => {
+        // Tapping the backdrop closes; taps on the image or controls do not.
+        if (e.target.id === 'lightbox') closeLightbox();
+    });
+    $('#lb-prev').addEventListener('click', () => { lightboxAt--; paintLightbox(); });
+    $('#lb-next').addEventListener('click', () => { lightboxAt++; paintLightbox(); });
+    $('#lb-pick').addEventListener('click', () => {
+        const photo = visiblePhotos()[lightboxAt];
+        if (!photo) return;
+        toggleInspiration(photo.id);
+        paintLightbox();
+    });
 
     $('#gallery-done').addEventListener('click', () => { $('#gallery').hidden = true; });
 

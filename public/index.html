@@ -24,10 +24,14 @@
   <main class="kiosk-body">
     <div class="kiosk-card">
       <div class="card-head">
-        <span class="card-hint">Approximately one minute</span>
+        <div class="steps" id="steps"></div>
         <button type="button" id="reset-btn" class="reset-btn">↺ Start over</button>
       </div>
       <form id="lead-form" autocomplete="off" novalidate></form>
+      <div class="step-nav" id="step-nav">
+        <button type="button" class="step-back" id="step-back">Back</button>
+        <button type="button" class="submit" id="step-next">Continue</button>
+      </div>
     </div>
   </main>
 
@@ -96,6 +100,19 @@
     </div>
     <div class="gallery-filters" id="gallery-filters"></div>
     <div class="gallery-grid" id="gallery-grid"></div>
+
+    <!-- Full-screen viewer. Sits above the grid so closing it returns the
+         visitor exactly where they were, mid-scroll. -->
+    <div class="lightbox" id="lightbox" hidden>
+      <button type="button" class="lb-close" id="lb-close" aria-label="Close">✕</button>
+      <button type="button" class="lb-arrow lb-prev" id="lb-prev" aria-label="Previous">‹</button>
+      <img id="lb-img" alt="" />
+      <button type="button" class="lb-arrow lb-next" id="lb-next" aria-label="Next">›</button>
+      <div class="lb-foot">
+        <p class="lb-alt" id="lb-alt"></p>
+        <button type="button" class="lb-pick" id="lb-pick">Select this photograph</button>
+      </div>
+    </div>
   </div>
 
   <!-- Staff step: deliberately NOT part of the visitor's thank-you card.

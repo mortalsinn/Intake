@@ -857,3 +857,93 @@ body.phone .submit { margin-top: 18px; min-height: 58px; font-size: 18px; }
   border: 1.5px solid var(--line);
 }
 .g-cell.on .g-tick { background: var(--bronze); color: #fff; border-color: var(--bronze-deep); }
+
+/* ---- step navigation ---- */
+
+.steps { display: flex; gap: 8px; flex-wrap: wrap; }
+.step-pip {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.step-pip i {
+  font-style: normal;
+  width: 26px; height: 26px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 13px;
+  background: var(--paper); color: var(--ink-soft);
+  border: 1.5px solid var(--line);
+}
+.step-pip.on { color: var(--ink); }
+.step-pip.on i { background: var(--bronze); border-color: var(--bronze-deep); color: #fff; }
+.step-pip.done i { background: var(--ok); border-color: var(--ok); color: #fff; }
+/* Only the current step needs its name spelled out on a narrow screen. */
+@media (max-width: 700px) {
+  .step-pip { font-size: 0; gap: 0; }
+  .step-pip.on { font-size: 12px; gap: 8px; }
+}
+
+.step-nav { display: flex; gap: 12px; align-items: center; margin-top: 26px; }
+.step-nav .submit { flex: 1; margin: 0; }
+.step-back {
+  font: inherit; font-size: 16px; font-weight: 600;
+  padding: 15px 26px; min-height: 68px;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--line);
+  background: var(--paper); color: var(--ink-soft);
+  cursor: pointer;
+}
+
+/* ---- full-screen photo viewer ---- */
+
+.g-zoom {
+  position: absolute; bottom: 8px; right: 8px;
+  width: 34px; height: 34px; border-radius: 8px;
+  display: grid; place-items: center;
+  font-size: 17px; line-height: 1;
+  background: rgba(20,27,34,0.62); color: #fff;
+  backdrop-filter: blur(2px);
+}
+.lightbox {
+  position: absolute; inset: 0; z-index: 5;
+  background: rgba(15, 20, 26, 0.96);
+  display: flex; align-items: center; justify-content: center;
+  animation: fadeIn 0.15s;
+}
+.lightbox img {
+  max-width: 92vw; max-height: 72vh;
+  object-fit: contain; border-radius: 10px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+.lb-close {
+  position: absolute; top: 16px; right: 16px;
+  width: 52px; height: 52px; border-radius: 50%;
+  font-size: 22px; cursor: pointer;
+  border: none; background: rgba(255,255,255,0.14); color: #fff;
+}
+.lb-arrow {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 60px; height: 88px; border-radius: 12px;
+  font-size: 42px; line-height: 1; cursor: pointer;
+  border: none; background: rgba(255,255,255,0.12); color: #fff;
+}
+.lb-prev { left: 12px; }
+.lb-next { right: 12px; }
+.lb-foot {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  padding: 18px 24px 26px; text-align: center;
+  background: linear-gradient(to top, rgba(15,20,26,0.95), transparent);
+}
+.lb-alt {
+  color: #cfc9bc; font-size: 15px; line-height: 1.45;
+  max-width: 720px; margin: 0 auto 14px;
+}
+.lb-pick {
+  font: inherit; font-size: 17px; font-weight: 700;
+  padding: 16px 32px; min-height: 58px;
+  border: none; border-radius: 12px; cursor: pointer;
+  background: linear-gradient(180deg, var(--bronze), var(--bronze-deep));
+  color: #fff;
+}
+.lb-pick.on { background: var(--ok); }

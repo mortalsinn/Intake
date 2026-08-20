@@ -127,12 +127,10 @@
           "options": [
             "Shower & bathroom glass",
             "Mirrors",
-            "Interior glass & partitions"
-          ]
-        },
-        {
-          "options": [
-            "Something else"
+            "Interior glass & partitions",
+            "Glass doors",
+            "Gyms",
+            "Wine rooms"
           ]
         }
       ]
@@ -140,9 +138,10 @@
     {
       "id": "inspiration",
       "section": "Your project",
-      "label": "Anything here catch your eye?",
+      "label": "Inspiration Gallery",
       "crmLabel": "Inspiration chosen",
-      "type": "inspiration"
+      "type": "inspiration",
+      "buttonLabel": "Browse the Inspiration Gallery"
     },
     {
       "id": "projectType",

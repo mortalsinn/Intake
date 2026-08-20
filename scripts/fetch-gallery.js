@@ -47,6 +47,20 @@ const FILTERS = [
     { label: 'Showers & mirrors', match: 'Bathroom Glass' },
 ];
 
+/**
+ * Photographs to keep OUT of the booth gallery, by website id.
+ *
+ * The website shows the craft honestly, including the crew mid-install and
+ * stairs still in plywood. That is the right choice for a portfolio and the
+ * wrong one for a visitor picking what they want their home to look like —
+ * they are choosing a finished look, not watching a build. Reviewed by eye;
+ * add ids here rather than deleting files, or the next run restores them.
+ */
+const EXCLUDE = new Set([
+    '6683', '6671', '6616', '6725',                  // staff at work
+    '6629', '6746', '6739', '6735', '6251', '6245',  // unfinished / job site
+]);
+
 const ITEM = /<div class="iw-item"[^>]*?data-id="(\d+)"[^>]*?data-tag="([^"]*)"[^>]*?data-alt="([^"]*)"[^>]*?>\s*<img[^>]*?data-src="([^"]+)"/gi;
 
 const decode = (s) => s
@@ -95,6 +109,7 @@ async function main() {
 
     const all = [];
     for (const m of html.matchAll(ITEM)) {
+        if (EXCLUDE.has(m[1])) continue;
         all.push({
             id: m[1],
             tags: decode(m[2]).split(',').map(t => t.trim()).filter(Boolean),

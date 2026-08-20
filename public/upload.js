@@ -53,6 +53,9 @@
                <button type="button" class="thumb-x" data-i="${i}" aria-label="Remove photograph">×</button>
              </div>`).join('');
         $('#send').hidden = picked.length === 0;
+        // The sharing question only makes sense once there is something to
+        // share, so it stays out of the way until then.
+        $('#share-opt').hidden = picked.length === 0;
         $('#send').textContent = picked.length === 1
             ? 'Send photograph' : `Send ${picked.length} photographs`;
     }
@@ -92,7 +95,14 @@
             const res = await fetch(`/u/${token}/photos`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ photos: picked }),
+                body: JSON.stringify({
+                    photos: picked,
+                    mayShare: !!$('#share-ok').checked,
+                    // The exact wording agreed to travels with the answer —
+                    // permission is only defensible if you can show what was
+                    // on screen when it was given.
+                    shareStatement: $('#share-opt').innerText.replace(/\s+/g, ' ').trim(),
+                }),
             });
             const data = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error(data.error || 'Upload failed.');

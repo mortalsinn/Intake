@@ -758,3 +758,21 @@ body.phone .submit { margin-top: 18px; min-height: 58px; font-size: 18px; }
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* Optional public-sharing opt-in on the customer's phone. */
+.share-opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+.share-opt input { width: 24px; height: 24px; flex: 0 0 24px; margin-top: 1px; accent-color: var(--bronze); }
+.share-opt strong { color: var(--ink); display: block; margin-bottom: 2px; }

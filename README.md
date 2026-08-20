@@ -71,6 +71,10 @@ unaffected by the show's wifi. Photographs are downscaled in their browser
 
 - The link is tied to one enquiry, unguessable, and expires after seven days,
   so a visitor can also upload later from home where the photographs are.
+- An optional, unticked box asks whether Ironwood may use the photographs
+  publicly. Whatever they choose is filed as its own note on the lead —
+  including the exact wording shown — so whoever picks a photo for social
+  media can see at a glance whether they are allowed to.
 - Attachments are a third Zoho module: without
   `ZohoCRM.modules.attachments.CREATE` the photographs are held on the server
   and the admin page says so.
@@ -107,14 +111,12 @@ the machine where you connected):
 
 `PORT` is set by Render automatically. Two operational notes:
 
-- **Free tier sleeps** after ~15 idle minutes and takes ~50s to wake. The
-  kiosk pings every 4 minutes while open, which keeps it awake through the
-  show day — but open the iPad a few minutes before doors. A $7 Starter
-  instance removes the issue entirely.
-- **Don't deploy during show hours.** A deploy restarts the instance and
-  wipes any leads that haven't pushed to Zoho yet (normally a seconds-wide
-  window; synced leads are already safe in the CRM). The CSV export reads
-  the same disk, so download it before any redeploy.
+- Running on a **Starter instance**: no spin-down, no 50-second cold start,
+  and the disk survives restarts, so the enquiry log persists between
+  deploys.
+- **Still don't deploy during show hours.** A deploy restarts the process;
+  anything mid-flight to Zoho is retried afterwards, but there is no reason
+  to take the risk while a booth is running. Turn Auto-Deploy off.
 
 ## Tests
 

@@ -170,6 +170,11 @@ app.post('/u/:token/photos', express.json({ limit: '24mb' }), (req, res) => {
         return res.status(400).json({ error: 'That is more photographs than we can accept for one enquiry.' });
     }
 
+    // Publishing permission is per upload, recorded with the exact wording
+    // shown, and only ever set — a later batch sent without the box ticked
+    // must not silently revoke a permission already given.
+    const mayShare = req.body?.mayShare === true;
+
     let saved = 0;
     for (const item of items.slice(0, 12)) {
         const m = /^data:(image\/(?:jpeg|png|webp|heic));base64,(.+)$/i.exec(String(item.dataUrl || ''));
@@ -180,6 +185,12 @@ app.post('/u/:token/photos', express.json({ limit: '24mb' }), (req, res) => {
         saved++;
     }
     if (!saved) return res.status(400).json({ error: 'Those files could not be read as photographs.' });
+
+    store.recordPhotoPermission(lead.id, {
+        mayShare,
+        statement: String(req.body?.shareStatement || '').slice(0, 600),
+        count: saved,
+    });
 
     res.json({ ok: true, saved });
     setImmediate(pushPhotos);
@@ -370,6 +381,7 @@ async function pushPhotos() {
     if (pushingPhotos) return;
     const cfg = store.getZoho();
     if (!cfg) return;
+    const formCfg = formConfig();
     pushingPhotos = true;
     try {
         for (const lead of store.leadsWithPendingPhotos()) {
@@ -391,6 +403,27 @@ async function pushPhotos() {
                     });
                     console.warn(`[zoho] photograph upload failed: ${err.message}`);
                 }
+            }
+        }
+        // Once the photographs are filed, record what may be done with them.
+        // After the attachments, so the note never claims photographs that
+        // did not arrive.
+        for (const lead of store.unpushedPermissions()) {
+            const perm = lead.photoPermission;
+            const entries = perm.log.filter(e => !e.pushed);
+            const count = entries.reduce((n, e) => n + (e.count || 0), 0);
+            if (!count) { store.markPermissionPushed(lead.id); continue; }
+            try {
+                await zoho.createNote(cfg, lead.zoho.leadId, zoho.buildPhotoPermissionNote({
+                    count,
+                    mayShare: perm.mayShare,
+                    statement: perm.statement,
+                    at: new Date().toISOString(),
+                    showName: formCfg.show.name,
+                }));
+                store.markPermissionPushed(lead.id);
+            } catch (err) {
+                console.warn(`[zoho] photograph permission note failed: ${err.message}`);
             }
         }
     } finally {

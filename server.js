@@ -47,6 +47,24 @@ app.get('/api/form', (req, res) => {
     }
 });
 
+/**
+ * Booth health, for the kiosk's status pill. No PIN and no personal data —
+ * counts and connection state only.
+ *
+ * Exists because the iPad could only ever report its OWN queue, so it said
+ * "all synced" the moment the server accepted a lead — true, and dangerously
+ * misleading if the server cannot reach Zoho. Staff must be able to see that
+ * from the booth, not discover it days later.
+ */
+app.get('/api/status', (req, res) => {
+    const z = store.getZoho();
+    res.json({
+        zohoConnected: !!z,
+        zohoNotes: z ? zoho.canWriteNotes(z) : false,
+        counts: store.counts(),
+    });
+});
+
 app.post('/api/leads', (req, res) => {
     let cfg;
     try {

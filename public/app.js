@@ -59,8 +59,21 @@
             }
         } finally {
             syncing = false;
-            paintSyncPill();
+            pollStatus(); // repaints with fresh server truth
         }
+    }
+
+    // Last known SERVER state. The iPad's own queue only proves a lead left
+    // the iPad; this proves it reached Zoho.
+    let serverStatus = null;
+
+    async function pollStatus() {
+        try {
+            serverStatus = await (await fetch('/api/status', { cache: 'no-store' })).json();
+        } catch {
+            serverStatus = null; // offline; the queue message covers it
+        }
+        paintSyncPill();
     }
 
     function paintSyncPill() {
@@ -68,15 +81,30 @@
         const waiting = loadQueue().length;
         const dead = loadDead().length;
         pill.hidden = false;
+
+        // Worst news first — a booth glance must surface the real problem.
         if (dead) {
             pill.textContent = `${dead} need attention — see admin`;
+            pill.className = 'sync-pill dead';
+        } else if (serverStatus && !serverStatus.zohoConnected) {
+            const held = serverStatus.counts.total;
+            pill.textContent = `⚠ Zoho not connected${held ? ` — ${held} held safely` : ''}`;
+            pill.className = 'sync-pill dead';
+        } else if (serverStatus && serverStatus.counts.failed) {
+            pill.textContent = `${serverStatus.counts.failed} rejected by Zoho — see admin`;
             pill.className = 'sync-pill dead';
         } else if (waiting) {
             pill.textContent = `${waiting} saved on iPad — waiting for wifi`;
             pill.className = 'sync-pill wait';
-        } else {
-            pill.textContent = 'All entries synced';
+        } else if (serverStatus && serverStatus.counts.pending) {
+            pill.textContent = `${serverStatus.counts.pending} waiting to reach Zoho`;
+            pill.className = 'sync-pill wait';
+        } else if (serverStatus && serverStatus.counts.synced) {
+            pill.textContent = `${serverStatus.counts.synced} in Zoho`;
             pill.className = 'sync-pill ok';
+        } else {
+            pill.textContent = serverStatus ? 'Ready' : 'Offline — entries save on this iPad';
+            pill.className = serverStatus ? 'sync-pill ok' : 'sync-pill wait';
         }
     }
 
@@ -368,7 +396,7 @@
     });
 
     // Staff shortcut: tapping the status pill forces a sync attempt now.
-    $('#sync-pill').addEventListener('click', flushQueue);
+    $('#sync-pill').addEventListener('click', () => { flushQueue(); pollStatus(); });
 
     // A visitor who wanders off mid-form shouldn't leave their half-typed
     // details on screen for the next person: after 90s of silence, wipe and
@@ -409,7 +437,9 @@
         render();
         paintSyncPill();
         showAttract();
+        pollStatus();
         flushQueue();
+        setInterval(pollStatus, 60 * 1000);
         setInterval(flushQueue, 15 * 1000);
         window.addEventListener('online', flushQueue);
         // Keep-alive: free-tier hosts sleep after ~15 idle minutes, and a

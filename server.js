@@ -122,9 +122,12 @@ app.post('/api/admin/retry', requirePin, (req, res) => {
 app.get('/api/admin/export.csv', requirePin, (req, res) => {
     const cfg = formConfig();
     const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const header = ['receivedAt', ...cfg.fields.map(f => f.id), 'zohoStatus', 'zohoLeadId', 'zohoError'];
+    // boothRating is second, next to the name — it's the column you sort by
+    // on Monday morning, not something to hunt for at the far right.
+    const header = ['receivedAt', 'boothRating', ...cfg.fields.map(f => f.id), 'zohoStatus', 'zohoLeadId', 'zohoError'];
     const rows = store.getLeads().map(l => [
         l.receivedAt,
+        l.fields._boothRating || '',
         ...cfg.fields.map(f => {
             const v = l.fields[f.id];
             return Array.isArray(v) ? v.join('; ') : v ?? '';

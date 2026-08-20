@@ -47,12 +47,14 @@
             const badgeCls = z.status === 'synced' ? 'ok' : z.status === 'failed' ? 'bad' : 'warn';
             const zText = z.status === 'synced' ? 'in Zoho' : z.status === 'failed' ? `failed: ${z.error || ''}` : 'waiting';
             const retry = z.status === 'failed' ? `<button class="ghost" data-retry="${l.id}">retry</button>` : '';
+            const rating = f._boothRating || '';
             return `<tr>
               <td>${new Date(l.receivedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+              <td>${/hot/i.test(rating) ? '🔥 Hot' : rating}</td>
               <td>${name}</td><td>${contact}</td><td>${interests}</td>
               <td><span class="badge ${badgeCls}" title="${z.error || ''}">${zText}</span></td>
               <td>${retry}</td></tr>`;
-        }).join('') || '<tr><td colspan="6" style="color:#888">No leads yet — go get \'em.</td></tr>';
+        }).join('') || '<tr><td colspan="7" style="color:#888">No leads yet — go get \'em.</td></tr>';
         return true;
     }
 

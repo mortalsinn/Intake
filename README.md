@@ -1,4 +1,4 @@
-# Ironwood Stair & Rail — Home Show Intake
+# Ironwood Stair & Rail — Fall Home Show 2026 Intake
 
 An iPad kiosk that captures visitor info at a home show and feeds it into
 Zoho CRM as Leads. Built for home-show reality: the wifi can drop, Zoho can
@@ -48,7 +48,7 @@ Leads scope.
    duration 10 minutes → **Create**.
 4. Paste the one-time code into the admin page within a few minutes.
 
-Leads arrive with `Lead Source = Home Show`, standard fields mapped
+Leads arrive with `Lead Source = Fall Home Show 2026`, standard fields mapped
 (name/phone/email/city), and a Description reading *"Captured at the
 &lt;show&gt; — &lt;when&gt;. Full details in Notes."* Everything from the booth —
 assessment, contact, what they want, the conversation, consent — is filed

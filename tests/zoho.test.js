@@ -3,7 +3,7 @@ const assert = require('node:assert');
 const { buildLeadRecord, buildNote, canWriteNotes, normalizeDatacenter, apiBase } = require('../lib/zoho');
 
 const formConfig = {
-    show: { name: 'Renovation Home Show', leadSource: 'Home Show', timeZone: 'America/Edmonton' },
+    show: { name: 'Fall Home Show 2026', leadSource: 'Fall Home Show 2026', timeZone: 'America/Edmonton' },
     companyFallback: 'Homeowner',
     fields: [
         { id: 'firstName', label: 'First name', type: 'text', zoho: 'First_Name' },
@@ -30,13 +30,13 @@ test('maps standard fields onto Zoho Lead fields', () => {
     assert.equal(r.Phone, '403-555-0100');
     assert.equal(r.Email, 'pat@example.com');
     assert.equal(r.City, 'Calgary');
-    assert.equal(r.Lead_Source, 'Home Show');
+    assert.equal(r.Lead_Source, 'Fall Home Show 2026');
     assert.equal(r.Company, 'Homeowner');
 });
 
 test('Description keeps the capture line and points at the Notes', () => {
     const r = buildLeadRecord(lead({ lastName: 'Woo', phone: '1', notes: 'oak to iron' }), formConfig);
-    assert.match(r.Description, /^Captured at the Renovation Home Show/);
+    assert.match(r.Description, /^Captured at the Fall Home Show 2026/);
     assert.match(r.Description, /Full details in Notes\./);
     // the detail belongs in the note now, not smuggled into the description
     assert.doesNotMatch(r.Description, /oak to iron/);
@@ -105,7 +105,7 @@ test('never builds a record Zoho must refuse: Last_Name and Company always set',
 test('lead carries the filing category: source and status', () => {
     const cfg = { ...formConfig, show: { ...formConfig.show, leadStatus: 'Not Contacted' } };
     const r = buildLeadRecord(lead({ lastName: 'W', phone: '1' }), cfg);
-    assert.equal(r.Lead_Source, 'Home Show');
+    assert.equal(r.Lead_Source, 'Fall Home Show 2026');
     assert.equal(r.Lead_Status, 'Not Contacted');
     // no configured status -> field omitted entirely, so Zoho's default stands
     const r2 = buildLeadRecord(lead({ lastName: 'W', phone: '1' }), formConfig);

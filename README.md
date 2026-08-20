@@ -44,7 +44,7 @@ Leads scope.
    admin → **Add Client** → **Self Client**.
 2. In `/admin.html` → *Connect Zoho CRM*, paste the Client ID and Secret.
 3. In the console's **Generate Code** tab, use scope
-   `ZohoCRM.modules.leads.CREATE,ZohoCRM.modules.notes.CREATE,ZohoCRM.modules.attachments.CREATE`,
+   `ZohoCRM.modules.leads.ALL,ZohoCRM.modules.notes.CREATE,ZohoCRM.modules.attachments.CREATE`,
    duration 10 minutes → **Create**.
 4. Paste the one-time code into the admin page within a few minutes.
 

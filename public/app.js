@@ -154,9 +154,14 @@
         $('#subhead').textContent = config.show.subhead || '';
         $('#thanks-headline').textContent = config.show.thanks || 'Thanks!';
         $('#thanks-sub').textContent = config.show.thanksSub || '';
+        if (config.show.attractLine) $('#attract-line').textContent = config.show.attractLine;
 
         form.innerHTML = '';
-        for (const field of config.fields) form.appendChild(fieldEl(field));
+        config.fields.forEach((field, i) => {
+            const el = fieldEl(field);
+            el.style.setProperty('--i', i); // staggered entrance
+            form.appendChild(el);
+        });
 
         const errBox = document.createElement('div');
         errBox.id = 'form-err';
@@ -214,10 +219,45 @@
 
         const thanks = $('#thanks');
         thanks.hidden = false;
-        const dismiss = () => { thanks.hidden = true; clearTimeout(t); };
+        // After the thank-you, hand the booth back to the attract screen so
+        // the next visitor walks up to the welcome, not someone else's form.
+        const dismiss = () => { thanks.hidden = true; clearTimeout(t); showAttract(); };
         const t = setTimeout(dismiss, 6000);
         thanks.addEventListener('click', dismiss, { once: true });
     });
+
+    // ---------- attract screen + idle reset ----------
+
+    const attract = $('#attract');
+
+    function showAttract() {
+        attract.hidden = false;
+        clearTimeout(idleTimer);
+    }
+
+    attract.addEventListener('click', () => {
+        attract.hidden = true;
+        armIdle();
+    });
+
+    // A visitor who wanders off mid-form shouldn't leave their half-typed
+    // details on screen for the next person: after 90s of silence, wipe and
+    // return to the welcome screen.
+    let idleTimer = null;
+    function armIdle() {
+        clearTimeout(idleTimer);
+        if (!attract.hidden) return;
+        idleTimer = setTimeout(() => {
+            for (const k of Object.keys(state)) delete state[k];
+            render();
+            window.scrollTo(0, 0);
+            $('#thanks').hidden = true;
+            showAttract();
+        }, 90 * 1000);
+    }
+    for (const ev of ['pointerdown', 'input', 'touchstart']) {
+        document.addEventListener(ev, armIdle, { passive: true });
+    }
 
     // ---------- boot ----------
 
@@ -238,6 +278,7 @@
         }
         render();
         paintSyncPill();
+        showAttract();
         flushQueue();
         setInterval(flushQueue, 15 * 1000);
         window.addEventListener('online', flushQueue);

@@ -105,27 +105,40 @@
         if (field.type === 'choice' || field.type === 'multi') {
             wrap.innerHTML = `
               <label class="title">${field.label}${field.required ? ' <span class="req">*</span>' : ''}</label>
-              <div class="pills"></div>
               <div class="err">Please pick one.</div>`;
-            const pills = wrap.querySelector('.pills');
-            for (const opt of field.options || []) {
-                const b = document.createElement('button');
-                b.type = 'button';
-                b.className = 'pill';
-                b.textContent = opt;
-                b.addEventListener('click', () => {
-                    if (field.type === 'choice') {
-                        state[field.id] = state[field.id] === opt ? '' : opt;
-                        for (const p of pills.children) p.classList.toggle('on', p.textContent === state[field.id]);
-                    } else {
-                        const cur = new Set(state[field.id] || []);
-                        cur.has(opt) ? cur.delete(opt) : cur.add(opt);
-                        state[field.id] = [...cur];
-                        b.classList.toggle('on');
-                    }
-                    wrap.classList.remove('invalid');
-                });
-                pills.appendChild(b);
+            const err = wrap.querySelector('.err');
+            // Options can be flat or grouped under headings ("Glass", …);
+            // a flat list is just one unlabelled group.
+            const groups = field.groups || [{ options: field.options || [] }];
+            for (const group of groups) {
+                if (group.label) {
+                    const h = document.createElement('div');
+                    h.className = 'group-label';
+                    h.textContent = group.label;
+                    wrap.insertBefore(h, err);
+                }
+                const pills = document.createElement('div');
+                pills.className = 'pills';
+                for (const opt of group.options || []) {
+                    const b = document.createElement('button');
+                    b.type = 'button';
+                    b.className = 'pill';
+                    b.textContent = opt;
+                    b.addEventListener('click', () => {
+                        if (field.type === 'choice') {
+                            state[field.id] = state[field.id] === opt ? '' : opt;
+                            for (const p of wrap.querySelectorAll('.pill')) p.classList.toggle('on', p.textContent === state[field.id]);
+                        } else {
+                            const cur = new Set(state[field.id] || []);
+                            cur.has(opt) ? cur.delete(opt) : cur.add(opt);
+                            state[field.id] = [...cur];
+                            b.classList.toggle('on');
+                        }
+                        wrap.classList.remove('invalid');
+                    });
+                    pills.appendChild(b);
+                }
+                wrap.insertBefore(pills, err);
             }
             return wrap;
         }

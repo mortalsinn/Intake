@@ -3,7 +3,7 @@
     "name": "Renovation Home Show",
     "leadSource": "Home Show",
     "headline": "Let's talk about your project",
-    "attractLine": "Custom stairs & railings, built in Calgary",
+    "attractLine": "Custom stairs, railings, metalwork & glass — built in Calgary",
     "subhead": "Leave your details and we'll follow up after the show.",
     "thanks": "Thanks — you're all set!",
     "thanksSub": "We'll be in touch soon. Enjoy the show!"
@@ -20,7 +20,23 @@
       "id": "interests",
       "label": "What are you thinking about?",
       "type": "multi",
-      "options": ["Interior railing", "Exterior railing", "Stairs / treads", "Deck or porch rail", "Something else"]
+      "groups": [
+        {
+          "label": "Stairs & Railings",
+          "options": ["Interior railing", "Exterior railing", "Stairs / treads", "Deck or porch rail", "Glass railing panels"]
+        },
+        {
+          "label": "Custom Metalwork",
+          "options": ["Architectural metalwork", "Gates & fences", "Custom fabrication"]
+        },
+        {
+          "label": "Glass",
+          "options": ["Shower & bathroom glass", "Mirrors", "Interior glass & partitions"]
+        },
+        {
+          "options": ["Something else"]
+        }
+      ]
     },
     {
       "id": "timeline",

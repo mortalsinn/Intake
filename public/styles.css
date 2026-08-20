@@ -166,7 +166,16 @@ input:focus, textarea:focus {
 }
 
 /* pill choices — single (choice) and multi */
-.pills { display: flex; flex-wrap: wrap; gap: 10px; border: 1.5px solid transparent; border-radius: var(--radius); }
+.group-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bronze);
+  margin: 12px 2px 8px;
+}
+.group-label:first-of-type { margin-top: 2px; }
+.pills { display: flex; flex-wrap: wrap; gap: 10px; border: 1.5px solid transparent; border-radius: var(--radius); margin-bottom: 2px; }
 .pill {
   border: 1.5px solid var(--line);
   background: var(--paper);

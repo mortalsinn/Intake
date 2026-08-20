@@ -195,8 +195,15 @@ async function pushPending() {
                     // withDetail only when notes are unavailable — the detail
                     // has to live somewhere, so it falls back to Description.
                     const record = zoho.buildLeadRecord(lead, formCfg, { withDetail: !notesOk });
-                    ({ leadId } = await zoho.createLead(cfg, record));
-                    store.updateLead(lead.id, { leadId });
+                    const created = await zoho.createLead(cfg, record);
+                    leadId = created.leadId;
+                    if (created.droppedField) {
+                        // Say it once, loudly: the lead is in, but not filed
+                        // where they asked, and only they can add the picklist
+                        // value in Zoho.
+                        console.warn(`[zoho] "${created.droppedField.value}" is not a valid ${created.droppedField.field} in your CRM — lead filed without it. Add the value in Zoho: Setup → Modules → Leads → that field.`);
+                    }
+                    store.updateLead(lead.id, { leadId, droppedField: created.droppedField?.field });
                 }
 
                 let noteError;

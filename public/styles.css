@@ -493,26 +493,35 @@ button.submit::after {
 .thanks-card p { color: var(--ink-soft); margin: 0; font-size: 19px; }
 .thanks-reset { margin-top: 22px !important; font-size: 15px !important; }
 
-/* staff rating strip — deliberately quiet; it's not for the visitor */
+/* Staff assessment — not for the visitor, so it reads as a discreet
+   internal control rather than part of the thank-you message. */
 .rate-strip {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 26px;
-  padding-top: 16px;
-  border-top: 1px dashed var(--line);
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
 }
-.rate-label { font-size: 13px; color: var(--ink-soft); margin-right: 4px; }
+.rate-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 12px;
+}
+.rate-options { display: flex; justify-content: center; gap: 10px; }
 .rate-strip button {
   font: inherit;
   font-size: 14px;
-  padding: 8px 14px;
-  border-radius: 999px;
+  font-weight: 600;
+  padding: 11px 18px;
+  min-height: 44px;
+  border-radius: 10px;
   border: 1.5px solid var(--line);
   background: #fff;
   color: var(--ink-soft);
   cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 .rate-strip button.on {
   background: var(--bronze);

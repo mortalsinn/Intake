@@ -2,6 +2,8 @@
   "show": {
     "name": "Renovation Home Show",
     "leadSource": "Home Show",
+    "leadStatus": "Home Show",
+    "submitLabel": "Submit",
     "timeZone": "America/Edmonton",
     "headline": "Let's talk about your project",
     "attractLine": "Custom stairs, railings, metalwork & glass — built in Calgary",

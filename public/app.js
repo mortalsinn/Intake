@@ -296,7 +296,7 @@
 
         const row = document.createElement('div');
         row.className = 'submit-row';
-        row.innerHTML = `<button type="submit" class="submit">Count me in</button>`;
+        row.innerHTML = `<button type="submit" class="submit">${config.show.submitLabel || 'Submit'}</button>`;
         form.appendChild(row);
     }
 

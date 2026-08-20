@@ -102,6 +102,16 @@ test('never builds a record Zoho must refuse: Last_Name and Company always set',
     assert.equal(r2.Company, 'Homeowner');
 });
 
+test('lead carries the filing category: source and status', () => {
+    const cfg = { ...formConfig, show: { ...formConfig.show, leadStatus: 'Not Contacted' } };
+    const r = buildLeadRecord(lead({ lastName: 'W', phone: '1' }), cfg);
+    assert.equal(r.Lead_Source, 'Home Show');
+    assert.equal(r.Lead_Status, 'Not Contacted');
+    // no configured status -> field omitted entirely, so Zoho's default stands
+    const r2 = buildLeadRecord(lead({ lastName: 'W', phone: '1' }), formConfig);
+    assert.equal('Lead_Status' in r2, false);
+});
+
 test('datacenter normalizes and points at zohoapis, not accounts', () => {
     assert.equal(normalizeDatacenter('ca'), 'ca');
     assert.equal(normalizeDatacenter('nope'), 'com');

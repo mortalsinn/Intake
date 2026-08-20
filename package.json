@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "gallery": "node scripts/fetch-gallery.js"
   },
   "engines": {
     "node": ">=18"

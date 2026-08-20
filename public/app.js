@@ -145,6 +145,18 @@
             return wrap;
         }
 
+        if (field.type === 'inspiration') {
+            wrap.innerHTML = `
+              <label class="title">${field.label}</label>
+              <button type="button" class="inspo-btn" id="inspiration-open">Browse inspiration photos</button>
+              <div class="inspo-picks" id="inspiration-picks"></div>`;
+            wrap.querySelector('#inspiration-open').addEventListener('click', openGallery);
+            // Re-render picks in case the visitor already chose some and the
+            // form was rebuilt underneath them.
+            setTimeout(paintInspirationField, 0);
+            return wrap;
+        }
+
         if (field.type === 'choice' || field.type === 'multi') {
             wrap.innerHTML = `
               <label class="title">${field.label}${field.required ? ' <span class="req">*</span>' : ''}</label>
@@ -409,6 +421,108 @@
             close({ askStaff: true });
         });
     });
+
+    // ---------- inspiration gallery ----------
+
+    const MAX_INSPIRATION = 3;
+    let galleryData = null;      // { filters, photos } from config/gallery.json
+    let activeFilter = null;     // null = show everything
+
+    /** Photographs the visitor picked, in the order they picked them. */
+    const chosenInspiration = () => state._inspiration || (state._inspiration = []);
+
+    async function openGallery() {
+        const overlay = $('#gallery');
+        if (!galleryData) {
+            try {
+                galleryData = await (await fetch('/api/gallery')).json();
+            } catch {
+                return; // no gallery configured; the button is hidden anyway
+            }
+            paintFilters();
+        }
+        paintGrid();
+        overlay.hidden = false;
+    }
+
+    function paintFilters() {
+        const bar = $('#gallery-filters');
+        bar.innerHTML = '';
+        const chip = (label, value) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'g-chip' + (activeFilter === value ? ' on' : '');
+            b.textContent = label;
+            b.addEventListener('click', () => { activeFilter = value; paintFilters(); paintGrid(); });
+            bar.appendChild(b);
+        };
+        chip('All', null);
+        for (const f of galleryData.filters || []) chip(f.label, f.match);
+    }
+
+    function visiblePhotos() {
+        const all = galleryData.photos || [];
+        return activeFilter ? all.filter(p => (p.tags || []).includes(activeFilter)) : all;
+    }
+
+    function paintGrid() {
+        const grid = $('#gallery-grid');
+        const picked = chosenInspiration();
+        grid.innerHTML = '';
+        for (const photo of visiblePhotos()) {
+            const idx = picked.indexOf(photo.id);
+            const cell = document.createElement('button');
+            cell.type = 'button';
+            cell.className = 'g-cell' + (idx >= 0 ? ' on' : '');
+            cell.innerHTML = `
+              <img src="${photo.thumb}" alt="${(photo.alt || '').replace(/"/g, '&quot;')}" loading="lazy" />
+              <span class="g-tick">${idx >= 0 ? idx + 1 : ''}</span>`;
+            cell.addEventListener('click', () => toggleInspiration(photo.id));
+            grid.appendChild(cell);
+        }
+        paintCount();
+    }
+
+    function toggleInspiration(id) {
+        const picked = chosenInspiration();
+        const at = picked.indexOf(id);
+        if (at >= 0) picked.splice(at, 1);
+        else if (picked.length < MAX_INSPIRATION) picked.push(id);
+        else {
+            // At the limit, swap the oldest out rather than refusing the tap.
+            // A visitor who keeps tapping should keep seeing something happen.
+            picked.shift();
+            picked.push(id);
+        }
+        paintGrid();
+        paintInspirationField();
+    }
+
+    function paintCount() {
+        const n = chosenInspiration().length;
+        $('#gallery-count').textContent = n === 0
+            ? `Choose up to ${MAX_INSPIRATION} photographs you like`
+            : `${n} of ${MAX_INSPIRATION} chosen — tap again to remove`;
+    }
+
+    /** Thumbnails of the picks, shown inline on the form. */
+    function paintInspirationField() {
+        const holder = $('#inspiration-picks');
+        if (!holder || !galleryData) return;
+        const picked = chosenInspiration();
+        holder.innerHTML = picked.map(id => {
+            const p = galleryData.photos.find(x => x.id === id);
+            return p ? `<img src="${p.thumb}" alt="" />` : '';
+        }).join('');
+        const btn = $('#inspiration-open');
+        if (btn) {
+            btn.textContent = picked.length
+                ? `${picked.length} chosen — change`
+                : 'Browse inspiration photos';
+        }
+    }
+
+    $('#gallery-done').addEventListener('click', () => { $('#gallery').hidden = true; });
 
     // ---------- staff step: enquiry priority ----------
 

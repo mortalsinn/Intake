@@ -138,6 +138,13 @@
       ]
     },
     {
+      "id": "inspiration",
+      "section": "Your project",
+      "label": "Anything here catch your eye?",
+      "crmLabel": "Inspiration chosen",
+      "type": "inspiration"
+    },
+    {
       "id": "projectType",
       "section": "Your project",
       "label": "Is this for an existing home or a new build?",

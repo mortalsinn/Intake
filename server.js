@@ -74,6 +74,15 @@ app.get('/api/status', (req, res) => {
     });
 });
 
+/** The inspiration gallery the kiosk shows. Absent file = feature off. */
+app.get('/api/gallery', (req, res) => {
+    try {
+        res.json(JSON.parse(fs.readFileSync(path.join(__dirname, 'config', 'gallery.json'), 'utf8')));
+    } catch {
+        res.status(404).json({ error: 'No gallery configured.' });
+    }
+});
+
 app.post('/api/leads', (req, res) => {
     let cfg;
     try {
@@ -377,6 +386,18 @@ async function pushPending() {
  */
 let pushingPhotos = false;
 
+// The gallery manifest, read once and cached — it only changes when someone
+// re-runs `npm run gallery`.
+let galleryCache = null;
+function galleryPhoto(id) {
+    if (!galleryCache) {
+        try {
+            galleryCache = JSON.parse(fs.readFileSync(path.join(__dirname, 'config', 'gallery.json'), 'utf8'));
+        } catch { galleryCache = { photos: [] }; }
+    }
+    return (galleryCache.photos || []).find(p => p.id === id) || null;
+}
+
 async function pushPhotos() {
     if (pushingPhotos) return;
     const cfg = store.getZoho();
@@ -405,6 +426,36 @@ async function pushPhotos() {
                 }
             }
         }
+        // Inspiration photographs the visitor picked from Ironwood's own
+        // gallery. Fetched full-size from the website at attach time rather
+        // than shipped with the kiosk — the booth only ever holds thumbnails.
+        for (const lead of store.leadsWithPendingInspiration()) {
+            if (!lead.zoho.leadId) continue;
+            const picks = lead.fields._inspiration || [];
+            for (let i = 0; i < picks.length; i++) {
+                if ((lead.inspirationPushed || []).includes(picks[i])) continue;
+                const photo = galleryPhoto(picks[i]);
+                if (!photo) { store.markInspirationPushed(lead.id, picks[i]); continue; }
+                try {
+                    const src = await fetch(photo.full);
+                    // Fall back to the cached thumbnail if the website is
+                    // unreachable — a smaller picture beats none.
+                    const buffer = src.ok
+                        ? Buffer.from(await src.arrayBuffer())
+                        : fs.readFileSync(path.join(__dirname, 'public', photo.thumb));
+                    await zoho.createAttachment(cfg, lead.zoho.leadId, {
+                        buffer, mimeType: 'image/jpeg',
+                        // Numbered so the CRM lists them in the order chosen.
+                        filename: `Inspiration ${i + 1}.jpg`,
+                    });
+                    store.markInspirationPushed(lead.id, picks[i]);
+                    console.log(`[zoho] inspiration ${i + 1} attached to lead ${lead.zoho.leadId}`);
+                } catch (err) {
+                    console.warn(`[zoho] inspiration attach failed: ${err.message}`);
+                }
+            }
+        }
+
         // Once the photographs are filed, record what may be done with them.
         // After the attachments, so the note never claims photographs that
         // did not arrive.

@@ -83,6 +83,21 @@
     </div>
   </div>
 
+  <!-- Inspiration picker: a full-screen overlay rather than a popup window.
+       iOS Safari blocks popups on a kiosk and a lost window would strand the
+       visitor away from their half-filled form. -->
+  <div id="gallery" class="gallery" hidden>
+    <div class="gallery-head">
+      <div>
+        <h2>Find your inspiration</h2>
+        <p id="gallery-count">Choose up to 3 photographs you like</p>
+      </div>
+      <button type="button" id="gallery-done" class="gallery-done">Done</button>
+    </div>
+    <div class="gallery-filters" id="gallery-filters"></div>
+    <div class="gallery-grid" id="gallery-grid"></div>
+  </div>
+
   <!-- Staff step: deliberately NOT part of the visitor's thank-you card.
        It appears only after someone taps to continue — the moment the
        tablet comes back to staff — so a customer never sees themselves

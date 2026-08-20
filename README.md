@@ -81,6 +81,25 @@ unaffected by the show's wifi. Photographs are downscaled in their browser
 - A photograph waits if its lead has not reached Zoho yet, then attaches once
   it has — nothing is dropped for arriving early.
 
+## Inspiration gallery
+
+The form offers "Browse inspiration photos" — a full-screen picker (not a
+popup: iOS Safari blocks those on a kiosk) showing work from
+ironwoodstairs.com/gallery, filtered by the website's own tags. A visitor
+picks up to three; they attach to their CRM lead as **Inspiration 1–3**.
+
+Refresh the gallery whenever the website gains new work:
+
+```bash
+npm run gallery      # re-scrapes, re-downloads, rewrites config/gallery.json
+```
+
+It takes up to 18 photographs per filter so no chip lands on an empty grid,
+caches ~500px thumbnails locally (fast, works offline), and leaves the
+full-size image on the website — that is fetched only at the moment one is
+attached to a lead. Edit `config/gallery.json` to curate by hand; the order
+there is the order shown.
+
 ## Changing the form
 
 Everything the visitor sees lives in [config/form.json](config/form.json) —

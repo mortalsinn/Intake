@@ -58,6 +58,39 @@ Everything the visitor sees lives in [config/form.json](config/form.json) —
 headline, thank-you text, fields, pill options, which Zoho field each input
 maps to. Edit it and reload the iPad; no code changes.
 
+## Deploying to Render
+
+Create a **Web Service** (not a Static Site — the Node server is what holds
+the lead log, the admin API, and the Zoho secrets), or use "New → Blueprint"
+which reads [render.yaml](render.yaml). Settings if doing it by hand:
+
+| Setting | Value |
+|---|---|
+| Repository / branch | `mortalsinn/Intake` / `main` |
+| Runtime | Node |
+| Build command | `npm ci` |
+| Start command | `npm start` |
+| Health check path | `/api/form` |
+
+Environment variables (Render wipes the disk on every deploy, so the Zoho
+connection must come from env — copy the values out of `data/zoho.json` on
+the machine where you connected):
+
+- `ADMIN_PIN` — strong, this admin page is on the public internet
+- `ZOHO_CLIENT_ID`, `ZOHO_CLIENT_SECRET`, `ZOHO_REFRESH_TOKEN`
+- `ZOHO_DC` — `com` (or your datacenter)
+
+`PORT` is set by Render automatically. Two operational notes:
+
+- **Free tier sleeps** after ~15 idle minutes and takes ~50s to wake. The
+  kiosk pings every 4 minutes while open, which keeps it awake through the
+  show day — but open the iPad a few minutes before doors. A $7 Starter
+  instance removes the issue entirely.
+- **Don't deploy during show hours.** A deploy restarts the instance and
+  wipes any leads that haven't pushed to Zoho yet (normally a seconds-wide
+  window; synced leads are already safe in the CRM). The CSV export reads
+  the same disk, so download it before any redeploy.
+
 ## Tests
 
 ```bash

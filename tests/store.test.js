@@ -31,6 +31,29 @@ test('updateLead moves status and counts follow', () => {
     assert.equal(store.pendingLeads().length, 1);
 });
 
+test('Zoho connection falls back to env vars when data/ is wiped (ephemeral hosts)', () => {
+    const store = createStore(tmp());
+    assert.equal(store.getZoho(), null);
+    process.env.ZOHO_CLIENT_ID = 'env-id';
+    process.env.ZOHO_CLIENT_SECRET = 'env-secret';
+    process.env.ZOHO_REFRESH_TOKEN = 'env-rt';
+    process.env.ZOHO_DC = 'ca';
+    try {
+        const z = store.getZoho();
+        assert.equal(z.clientId, 'env-id');
+        assert.equal(z.refreshToken, 'env-rt');
+        assert.equal(z.datacenter, 'ca');
+        // a connection made through the admin page still wins over env
+        store.setZoho({ clientId: 'file-id', clientSecret: 's', refreshToken: 'r', datacenter: 'com' });
+        assert.equal(store.getZoho().clientId, 'file-id');
+    } finally {
+        delete process.env.ZOHO_CLIENT_ID;
+        delete process.env.ZOHO_CLIENT_SECRET;
+        delete process.env.ZOHO_REFRESH_TOKEN;
+        delete process.env.ZOHO_DC;
+    }
+});
+
 test('retry() puts failed leads back in the pending pool', () => {
     const store = createStore(tmp());
     store.addLead({ id: 'a', fields: {} });

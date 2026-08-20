@@ -295,6 +295,10 @@
         flushQueue();
         setInterval(flushQueue, 15 * 1000);
         window.addEventListener('online', flushQueue);
+        // Keep-alive: free-tier hosts sleep after ~15 idle minutes, and a
+        // cold start is a ~50s stare at a blank iPad for the next visitor.
+        // A tiny ping while the kiosk is open keeps the booth warm.
+        setInterval(() => fetch('/api/form', { cache: 'no-store' }).catch(() => {}), 4 * 60 * 1000);
     }
 
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});

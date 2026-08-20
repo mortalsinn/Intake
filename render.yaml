@@ -1,0 +1,23 @@
+# Render blueprint — makes "New → Blueprint" one click, but the same values
+# work if you create the Web Service by hand. This app is NOT a static site:
+# it needs the Node server for the lead log, the admin API, and the Zoho
+# push (the OAuth secrets can never live in the browser).
+services:
+  - type: web
+    name: ironwood-intake
+    runtime: node
+    plan: free            # fine for a show; see README for the cold-start note
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/form
+    envVars:
+      - key: ADMIN_PIN
+        sync: false       # set in the dashboard — pick something strong, this is public internet
+      - key: ZOHO_CLIENT_ID
+        sync: false       # copy the values from data/zoho.json on the dev box
+      - key: ZOHO_CLIENT_SECRET
+        sync: false
+      - key: ZOHO_REFRESH_TOKEN
+        sync: false
+      - key: ZOHO_DC
+        value: com

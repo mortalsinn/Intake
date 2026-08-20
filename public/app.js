@@ -403,6 +403,41 @@
     // Staff shortcut: tapping the status pill forces a sync attempt now.
     $('#sync-pill').addEventListener('click', () => { flushQueue(); pollStatus(); });
 
+    // ---------- start over ----------
+
+    /** Is there anything a visitor would be sad to lose? */
+    const formHasContent = () => Object.values(state).some(v =>
+        Array.isArray(v) ? v.length > 0 : v === true || (v != null && String(v).trim() !== ''));
+
+    function clearForm() {
+        for (const k of Object.keys(state)) delete state[k];
+        render();
+        window.scrollTo(0, 0);
+        $('#thanks').hidden = true;
+        showAttract();
+    }
+
+    const resetBtn = $('#reset-btn');
+    let armedTimer = null;
+    const disarm = () => {
+        clearTimeout(armedTimer);
+        armedTimer = null;
+        resetBtn.classList.remove('armed');
+        resetBtn.textContent = '↺ Start over';
+    };
+
+    resetBtn.addEventListener('click', () => {
+        // Nothing typed yet: no confirmation to give, just go home.
+        if (!formHasContent()) { clearForm(); return; }
+        // Something IS typed. One stray tap must not wipe a visitor's work,
+        // but staff must not be slowed by a modal either — so the button
+        // arms itself and the second tap commits. Auto-disarms in 4s.
+        if (armedTimer) { disarm(); clearForm(); return; }
+        resetBtn.classList.add('armed');
+        resetBtn.textContent = 'Tap again to clear';
+        armedTimer = setTimeout(disarm, 4000);
+    });
+
     // A visitor who wanders off mid-form shouldn't leave their half-typed
     // details on screen for the next person: after 90s of silence, wipe and
     // return to the welcome screen.

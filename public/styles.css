@@ -114,6 +114,40 @@ body::before {
   border-image: linear-gradient(90deg, #91772e, #f0ad4e, #91772e) 1;
 }
 
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: -6px 0 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+.card-hint { font-size: 14px; color: var(--ink-soft); letter-spacing: 0.02em; }
+.reset-btn {
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 11px 18px;
+  min-height: 46px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  background: var(--paper);
+  color: var(--ink-soft);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.12s;
+}
+.reset-btn:active { transform: scale(0.95); }
+/* Armed: one tap already landed on a form with content, so the next tap
+   clears it. Loud on purpose — this state destroys someone's typing. */
+.reset-btn.armed {
+  background: var(--warn);
+  border-color: var(--warn);
+  color: #fff;
+  animation: breathe 1.2s ease-in-out infinite;
+}
+
 #lead-form { display: flex; flex-wrap: wrap; gap: 18px 16px; }
 
 .field { flex: 1 1 100%; animation: rise 0.45s both; animation-delay: calc(var(--i, 0) * 55ms); }

@@ -502,9 +502,17 @@
             }
             paintFilters();
         }
-        paintGrid();
+        // Show FIRST, then paint: the column count is measured from the
+        // grid's width, and a hidden element measures zero — which silently
+        // collapsed the gallery to the narrowest layout.
         overlay.hidden = false;
+        paintGrid();
     }
+
+    // Rebalance when the iPad is turned.
+    window.addEventListener('resize', () => {
+        if (!$('#gallery').hidden && galleryData) paintGrid();
+    });
 
     function paintFilters() {
         const bar = $('#gallery-filters');
@@ -530,6 +538,24 @@
         const grid = $('#gallery-grid');
         const picked = chosenInspiration();
         grid.innerHTML = '';
+
+        // Real column elements rather than CSS `columns`. Multi-column fills
+        // downward then starts a NEW column sideways, so inside a fixed-height
+        // scroller it overflows horizontally — the grid grew a sideways
+        // scrollbar and clipped a column. Columns as flex children scroll the
+        // way a gallery should.
+        const colCount = grid.clientWidth > 1100 ? 4 : grid.clientWidth > 700 ? 3 : 2;
+        const cols = [];
+        for (let i = 0; i < colCount; i++) {
+            const c = document.createElement('div');
+            c.className = 'g-col';
+            grid.appendChild(c);
+            cols.push({ el: c, height: 0 });
+        }
+        // Drop each photograph into whichever column is currently shortest,
+        // so the bottom edge stays roughly level instead of one long tail.
+        const shortest = () => cols.reduce((a, b) => (b.height < a.height ? b : a));
+
         for (const photo of visiblePhotos()) {
             const idx = picked.indexOf(photo.id);
             const cell = document.createElement('button');
@@ -545,7 +571,12 @@
                 if (e.target.closest('.g-zoom')) openLightbox(photo.id);
                 else toggleInspiration(photo.id);
             });
-            grid.appendChild(cell);
+            const col = shortest();
+            col.el.appendChild(cell);
+            // Aspect ratio from the manifest would be ideal; these are all
+            // roughly portrait, so a constant keeps the columns balanced
+            // without waiting for images to load.
+            col.height += 1;
         }
         paintCount();
     }

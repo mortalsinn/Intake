@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!-- maximum-scale keeps iOS Safari from zooming the page when an input
+       focuses; inputs are 16px+ so it never needs to. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#1d1d1d" />
+  <title>Ironwood Stair &amp; Rail — Tell us about your project</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-inner">
+      <div class="wordmark">Ironwood<small>Stair &amp; Rail Inc.</small></div>
+      <h1 id="headline">Let's talk about your project</h1>
+      <p id="subhead"></p>
+    </div>
+  </header>
+
+  <main class="kiosk-body">
+    <form id="lead-form" autocomplete="off" novalidate></form>
+  </main>
+
+  <footer class="kiosk-foot">
+    <div id="sync-pill" class="sync-pill ok" hidden></div>
+    <a class="staff-link" href="admin.html" aria-label="Staff admin">⚙</a>
+  </footer>
+
+  <div id="thanks" class="thanks" hidden>
+    <div class="thanks-card">
+      <div class="thanks-check">✓</div>
+      <h2 id="thanks-headline">Thanks — you're all set!</h2>
+      <p id="thanks-sub">We'll be in touch soon.</p>
+      <p class="thanks-reset">Tap anywhere for the next visitor</p>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,293 @@
+/* Ironwood Stair & Rail — iPad kiosk styles.
+   Palette lifted from ironwoodstairs.com: charcoal #1d1d1d, antique bronze
+   #91772e, warm amber #f0ad4e, pale gold #ddca93, navy-slate #1a252f.
+   Everything is sized for fingers — 56px minimum touch height. */
+
+:root {
+  --ink: #1d1d1d;
+  --ink-soft: #5a564e;
+  --paper: #f7f5f0;
+  --card: #ffffff;
+  --line: #e5e1d8;
+  --bronze: #91772e;
+  --bronze-deep: #7a6426;
+  --amber: #f0ad4e;
+  --gold-pale: #ddca93;
+  --navy: #1a252f;
+  --ok: #2e7d32;
+  --warn: #b3261e;
+  --radius: 14px;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--paper);
+  color: var(--ink);
+  font: 18px/1.45 -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* ---- branded masthead: charcoal band, gold wordmark ---- */
+
+.masthead {
+  background: linear-gradient(160deg, var(--ink) 0%, var(--navy) 100%);
+  color: #fff;
+  margin: 0 0 26px;
+  padding: 30px 24px 26px;
+  border-bottom: 4px solid var(--bronze);
+}
+.masthead-inner { max-width: 760px; margin: 0 auto; }
+
+.wordmark {
+  font-family: Georgia, "Times New Roman", serif;
+  color: var(--gold-pale);
+  letter-spacing: 0.22em;
+  font-size: 30px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.wordmark small {
+  display: block;
+  font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--amber);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.42em;
+  margin-top: 4px;
+}
+.masthead h1 {
+  font-size: 30px;
+  margin: 20px 0 4px;
+  letter-spacing: -0.01em;
+}
+.masthead p { color: #cfc9bc; margin: 0; font-size: 19px; }
+
+.kiosk-body {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 24px 90px;
+}
+
+/* ---- form ---- */
+
+#lead-form { display: flex; flex-wrap: wrap; gap: 18px 16px; }
+
+.field { flex: 1 1 100%; }
+.field.half { flex: 1 1 calc(50% - 8px); min-width: 260px; }
+
+.field label.title {
+  display: block;
+  font-weight: 600;
+  font-size: 17px;
+  margin-bottom: 8px;
+}
+.field label.title .req { color: var(--warn); }
+
+input[type="text"], input[type="tel"], input[type="email"], textarea {
+  width: 100%;
+  font: inherit;
+  padding: 15px 16px;
+  min-height: 56px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--ink);
+  outline: none;
+}
+textarea { min-height: 96px; resize: none; }
+input:focus, textarea:focus { border-color: var(--bronze); }
+
+.field.invalid input, .field.invalid textarea, .field.invalid .pills, .field.invalid .consent-row {
+  border-color: var(--warn);
+}
+.field .err {
+  display: none;
+  color: var(--warn);
+  font-size: 15px;
+  margin-top: 6px;
+}
+.field.invalid .err { display: block; }
+
+/* pill choices — single (choice) and multi */
+.pills { display: flex; flex-wrap: wrap; gap: 10px; border: 1.5px solid transparent; border-radius: var(--radius); }
+.pill {
+  border: 1.5px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 13px 20px;
+  min-height: 52px;
+  font: inherit;
+  font-size: 17px;
+  cursor: pointer;
+}
+.pill.on {
+  background: var(--bronze);
+  border-color: var(--bronze-deep);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* consent */
+.consent-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--card);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  cursor: pointer;
+}
+.consent-row .box {
+  flex: 0 0 30px;
+  height: 30px;
+  border: 2px solid var(--ink-soft);
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  color: transparent;
+  background: var(--paper);
+}
+.consent-row.on .box { background: var(--bronze); border-color: var(--bronze-deep); color: #fff; }
+.consent-row span.txt { font-size: 17px; }
+
+.submit-row { flex: 1 1 100%; margin-top: 6px; }
+button.submit {
+  width: 100%;
+  min-height: 66px;
+  font: inherit;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fff;
+  background: linear-gradient(180deg, var(--bronze) 0%, var(--bronze-deep) 100%);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(145, 119, 46, 0.35);
+}
+button.submit:active { filter: brightness(0.92); }
+button.submit[disabled] { opacity: 0.6; }
+
+.form-err {
+  flex: 1 1 100%;
+  color: var(--warn);
+  font-weight: 600;
+  display: none;
+}
+.form-err.show { display: block; }
+
+/* ---- footer: sync status (staff-facing, subtle) ---- */
+
+.kiosk-foot {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  pointer-events: none;
+}
+.sync-pill {
+  pointer-events: auto;
+  font-size: 14px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: #e2ecdf;
+  color: var(--ok);
+}
+.sync-pill.wait { background: #f6ead1; color: var(--bronze-deep); }
+.sync-pill.dead { background: #f7dcda; color: var(--warn); }
+.staff-link {
+  pointer-events: auto;
+  color: var(--line);
+  font-size: 22px;
+  text-decoration: none;
+  padding: 6px;
+}
+
+/* ---- thank-you overlay ---- */
+
+/* [hidden] loses to any author display rule, so say it ourselves —
+   without this the transparent overlay sits over the form eating taps. */
+.thanks[hidden] { display: none; }
+.thanks {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 37, 47, 0.62);
+  display: grid;
+  place-items: center;
+  z-index: 10;
+}
+.thanks-card {
+  background: var(--card);
+  border-top: 5px solid var(--bronze);
+  border-radius: 22px;
+  padding: 48px 56px;
+  text-align: center;
+  max-width: 520px;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.4);
+}
+.thanks-check {
+  width: 84px; height: 84px;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, var(--bronze) 0%, var(--bronze-deep) 100%);
+  color: #fff;
+  font-size: 46px;
+  display: grid;
+  place-items: center;
+}
+.thanks-card h2 { font-size: 30px; margin: 0 0 6px; }
+.thanks-card p { color: var(--ink-soft); margin: 0; font-size: 19px; }
+.thanks-reset { margin-top: 22px !important; font-size: 15px !important; }
+
+/* ---- admin ---- */
+
+.admin { max-width: 1000px; margin: 0 auto; padding: 24px; }
+.admin .wordmark { color: var(--bronze); font-size: 20px; }
+.admin .wordmark small { color: var(--ink-soft); font-size: 10px; }
+.admin h1 { font-size: 26px; margin: 10px 0 18px; }
+.admin .cards { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; }
+.card {
+  background: var(--card);
+  border: 1.5px solid var(--line);
+  border-top: 3px solid var(--bronze);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  flex: 1 1 220px;
+}
+.card h3 { margin: 0 0 8px; font-size: 15px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.05em; }
+.card .big { font-size: 30px; font-weight: 700; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+.badge.ok { background: #e2ecdf; color: var(--ok); }
+.badge.warn { background: #f6ead1; color: var(--bronze-deep); }
+.badge.bad { background: #f7dcda; color: var(--warn); }
+
+.admin table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: var(--radius); overflow: hidden; }
+.admin th, .admin td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: 15px; }
+.admin th { background: #f1ede4; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); }
+
+.admin input, .admin select {
+  font: inherit; padding: 10px 12px;
+  border: 1.5px solid var(--line); border-radius: 10px;
+  width: 100%; margin: 4px 0 12px;
+  background: var(--card); color: var(--ink);
+}
+.admin button {
+  font: inherit; font-weight: 600;
+  padding: 10px 18px;
+  border: none; border-radius: 10px;
+  background: var(--bronze); color: #fff;
+  cursor: pointer;
+}
+.admin button.ghost { background: transparent; color: var(--bronze-deep); border: 1.5px solid var(--bronze); }
+.admin .msg { font-weight: 600; margin: 8px 0; }
+.admin .msg.bad { color: var(--warn); }
+.admin .msg.ok { color: var(--ok); }
+.admin details { margin: 14px 0; }
+.admin code { background: #f1ede4; padding: 2px 6px; border-radius: 6px; font-size: 14px; }

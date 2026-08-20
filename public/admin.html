@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ironwood Intake — Staff Admin</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="admin">
+  <div class="wordmark">Ironwood<small>Stair &amp; Rail Inc.</small></div>
+  <h1>Home Show Intake — Staff Admin</h1>
+
+  <div id="pin-gate">
+    <div class="card" style="max-width:380px">
+      <h3>Staff PIN</h3>
+      <input id="pin" type="tel" inputmode="numeric" placeholder="PIN (printed where the server runs)" />
+      <button id="pin-go">Unlock</button>
+      <div id="pin-msg" class="msg bad"></div>
+    </div>
+  </div>
+
+  <div id="panel" hidden>
+    <div class="cards">
+      <div class="card"><h3>Captured</h3><div class="big" id="c-total">–</div></div>
+      <div class="card"><h3>In Zoho</h3><div class="big" id="c-synced">–</div></div>
+      <div class="card"><h3>Waiting</h3><div class="big" id="c-pending">–</div></div>
+      <div class="card">
+        <h3>Zoho CRM</h3>
+        <div id="zoho-badge" class="badge warn">checking…</div>
+        <div style="margin-top:10px">
+          <button class="ghost" id="btn-export">Download CSV</button>
+          <button class="ghost" id="btn-retry">Retry failed</button>
+        </div>
+      </div>
+    </div>
+
+    <details id="zoho-setup">
+      <summary style="cursor:pointer;font-weight:600">Connect / reconnect Zoho CRM</summary>
+      <div class="card" style="margin-top:12px;max-width:560px">
+        <p style="margin-top:0">One-time setup, ~5 minutes:</p>
+        <ol style="line-height:1.7">
+          <li>Open <code>api-console.zoho.com</code> (log in as the CRM admin) → <b>Add Client</b> → <b>Self Client</b>.</li>
+          <li>Copy the <b>Client ID</b> and <b>Client Secret</b> below.</li>
+          <li>On the <b>Generate Code</b> tab, paste scope <code id="scope-str">ZohoCRM.modules.leads.CREATE</code>, duration 10 minutes, any description → <b>Create</b>.</li>
+          <li>Paste the generated code below <b>within a few minutes</b> — it's single-use and expires fast.</li>
+        </ol>
+        <label>Client ID</label><input id="z-id" placeholder="1000.XXXX…" />
+        <label>Client Secret</label><input id="z-secret" type="password" placeholder="stays on the server, never shown again" />
+        <label>Data center</label>
+        <select id="z-dc">
+          <option value="com">zoho.com (US — most common)</option>
+          <option value="ca">zoho.ca (Canada)</option>
+          <option value="eu">zoho.eu</option>
+          <option value="in">zoho.in</option>
+          <option value="com.au">zoho.com.au</option>
+        </select>
+        <label>One-time code</label><input id="z-code" placeholder="1000.xxxx.xxxx" />
+        <button id="z-connect">Connect</button>
+        <div id="z-msg" class="msg"></div>
+      </div>
+    </details>
+
+    <h2 style="font-size:19px">Leads (newest first)</h2>
+    <table>
+      <thead><tr><th>When</th><th>Name</th><th>Contact</th><th>Interested in</th><th>Zoho</th><th></th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "name": "Ironwood Stair & Rail — Home Show Intake",
+  "short_name": "Ironwood Intake",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#1d1d1d",
+  "theme_color": "#1d1d1d",
+  "start_url": "./",
+  "icons": []
+}

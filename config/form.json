@@ -1,0 +1,33 @@
+{
+  "show": {
+    "name": "Renovation Home Show",
+    "leadSource": "Home Show",
+    "headline": "Let's talk about your project",
+    "subhead": "Leave your details and we'll follow up after the show.",
+    "thanks": "Thanks — you're all set!",
+    "thanksSub": "We'll be in touch soon. Enjoy the show!"
+  },
+  "companyFallback": "Homeowner",
+  "requirePhoneOrEmail": true,
+  "fields": [
+    { "id": "firstName", "label": "First name", "type": "text", "zoho": "First_Name", "autocapitalize": "words", "half": true },
+    { "id": "lastName", "label": "Last name", "type": "text", "required": true, "zoho": "Last_Name", "autocapitalize": "words", "half": true },
+    { "id": "phone", "label": "Phone", "type": "tel", "zoho": "Phone", "half": true },
+    { "id": "email", "label": "Email", "type": "email", "zoho": "Email", "half": true },
+    { "id": "city", "label": "City / neighbourhood", "type": "text", "zoho": "City" },
+    {
+      "id": "interests",
+      "label": "What are you thinking about?",
+      "type": "multi",
+      "options": ["Interior railing", "Exterior railing", "Stairs / treads", "Deck or porch rail", "Something else"]
+    },
+    {
+      "id": "timeline",
+      "label": "When would you like it done?",
+      "type": "choice",
+      "options": ["As soon as possible", "1–3 months", "3–6 months", "Just gathering ideas"]
+    },
+    { "id": "notes", "label": "Anything else we should know?", "type": "textarea", "placeholder": "Existing railing? Photos on your phone? Rough measurements?" },
+    { "id": "consent", "label": "Yes, you can contact me about my project.", "type": "consent", "required": true }
+  ]
+}

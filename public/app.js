@@ -268,7 +268,22 @@
         if (config.show.attractLine) $('#attract-line').textContent = config.show.attractLine;
 
         form.innerHTML = '';
+        // Section headers break twelve questions into three small asks. The
+        // number matters more than it looks: it tells someone mid-form how
+        // much is left, which is the thing a long column never says.
+        let lastSection = null;
+        let sectionNo = 0;
         config.fields.forEach((field, i) => {
+            if (field.section && field.section !== lastSection) {
+                lastSection = field.section;
+                sectionNo++;
+                const head = document.createElement('div');
+                head.className = 'section-head';
+                head.style.setProperty('--i', i);
+                head.innerHTML = `<span class="section-num">${sectionNo}</span>
+                                  <span class="section-title">${field.section}</span>`;
+                form.appendChild(head);
+            }
             const el = fieldEl(field);
             el.style.setProperty('--i', i); // staggered entrance
             form.appendChild(el);

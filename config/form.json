@@ -12,61 +12,167 @@
   "companyFallback": "Homeowner",
   "requirePhoneOrEmail": true,
   "fields": [
-    { "id": "firstName", "label": "First name", "crmLabel": "Name", "type": "text", "zoho": "First_Name", "autocapitalize": "words", "half": true },
-    { "id": "lastName", "label": "Last name", "crmLabel": "Surname", "type": "text", "required": true, "zoho": "Last_Name", "autocapitalize": "words", "half": true },
-    { "id": "phone", "label": "Phone", "type": "tel", "zoho": "Phone", "half": true, "placeholder": "(403) 555-0123" },
-    { "id": "email", "label": "Email", "type": "email", "zoho": "Email", "half": true, "placeholder": "you@example.com" },
-    { "id": "contactPref", "label": "Best way to reach you?", "crmLabel": "Prefers", "type": "choice", "options": ["Call", "Text", "Email"] },
     {
-      "id": "city", "label": "City / neighbourhood", "crmLabel": "City", "type": "text", "zoho": "City",
+      "id": "firstName",
+      "section": "About you",
+      "label": "First name",
+      "crmLabel": "Name",
+      "type": "text",
+      "zoho": "First_Name",
       "autocapitalize": "words",
-      "suggest": ["Calgary", "Airdrie", "Cochrane", "Okotoks", "Chestermere", "Strathmore", "Acreage / rural"]
+      "half": true
+    },
+    {
+      "id": "lastName",
+      "section": "About you",
+      "label": "Last name",
+      "crmLabel": "Surname",
+      "type": "text",
+      "required": true,
+      "zoho": "Last_Name",
+      "autocapitalize": "words",
+      "half": true
+    },
+    {
+      "id": "phone",
+      "section": "About you",
+      "label": "Phone",
+      "type": "tel",
+      "zoho": "Phone",
+      "half": true,
+      "placeholder": "(403) 555-0123"
+    },
+    {
+      "id": "email",
+      "section": "About you",
+      "label": "Email",
+      "type": "email",
+      "zoho": "Email",
+      "half": true,
+      "placeholder": "you@example.com"
+    },
+    {
+      "id": "contactPref",
+      "section": "About you",
+      "label": "Best way to reach you?",
+      "crmLabel": "Prefers",
+      "type": "choice",
+      "options": [
+        "Call",
+        "Text",
+        "Email"
+      ]
+    },
+    {
+      "id": "city",
+      "section": "About you",
+      "label": "City / neighbourhood",
+      "crmLabel": "City",
+      "type": "text",
+      "zoho": "City",
+      "autocapitalize": "words",
+      "suggest": [
+        "Calgary",
+        "Airdrie",
+        "Cochrane",
+        "Okotoks",
+        "Chestermere",
+        "Strathmore",
+        "Acreage / rural"
+      ]
     },
     {
       "id": "interests",
+      "section": "Your project",
       "label": "What are you thinking about?",
       "crmLabel": "Interested in",
       "type": "multi",
       "groups": [
         {
           "label": "Stairs & Railings",
-          "options": ["Interior railing", "Exterior railing", "Stairs / treads", "Deck or porch rail", "Glass railing panels"]
+          "options": [
+            "Interior railing",
+            "Exterior railing",
+            "Stairs / treads",
+            "Deck or porch rail",
+            "Glass railing panels"
+          ]
         },
         {
           "label": "Custom Metalwork",
-          "options": ["Architectural metalwork", "Gates & fences", "Custom fabrication"]
+          "options": [
+            "Architectural metalwork",
+            "Gates & fences",
+            "Custom fabrication"
+          ]
         },
         {
           "label": "Glass",
-          "options": ["Shower & bathroom glass", "Mirrors", "Interior glass & partitions"]
+          "options": [
+            "Shower & bathroom glass",
+            "Mirrors",
+            "Interior glass & partitions"
+          ]
         },
         {
-          "options": ["Something else"]
+          "options": [
+            "Something else"
+          ]
         }
       ]
     },
     {
       "id": "projectType",
+      "section": "Your project",
       "label": "Is this for…",
       "crmLabel": "Project",
       "type": "choice",
-      "options": ["Updating our current home", "A new build", "Not sure yet"]
+      "options": [
+        "Updating our current home",
+        "A new build",
+        "Not sure yet"
+      ]
     },
     {
       "id": "timeline",
+      "section": "Your project",
       "label": "When would you like it done?",
       "crmLabel": "Timeline",
       "type": "choice",
-      "options": ["As soon as possible", "1–3 months", "3–6 months", "Just gathering ideas"]
+      "options": [
+        "As soon as possible",
+        "1–3 months",
+        "3–6 months",
+        "Just gathering ideas"
+      ]
     },
     {
       "id": "budget",
+      "section": "Your project",
       "label": "Rough budget in mind? (no pressure — it helps us point you right)",
       "crmLabel": "Budget",
       "type": "choice",
-      "options": ["Under $5K", "$5K – $15K", "$15K+", "Still exploring"]
+      "options": [
+        "Under $5K",
+        "$5K – $15K",
+        "$15K+",
+        "Still exploring"
+      ]
     },
-    { "id": "notes", "label": "Anything else we should know?", "crmLabel": "Notes", "type": "textarea", "placeholder": "Existing railing? Photos on your phone? Rough measurements?" },
-    { "id": "consent", "label": "Yes, you can contact me about my project.", "type": "consent", "required": true }
+    {
+      "id": "notes",
+      "section": "Anything else",
+      "label": "Anything else we should know?",
+      "crmLabel": "Notes",
+      "type": "textarea",
+      "placeholder": "Existing railing? Photos on your phone? Rough measurements?"
+    },
+    {
+      "id": "consent",
+      "section": "Anything else",
+      "label": "Yes, you can contact me about my project.",
+      "type": "consent",
+      "required": true
+    }
   ]
 }

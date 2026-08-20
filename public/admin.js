@@ -8,6 +8,18 @@
         headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin, ...(opts.headers || {}) },
     });
 
+    // Photographs a customer sent from their own phone, per enquiry.
+    const photoCell = (l) => {
+        const ps = l.photos || [];
+        if (!ps.length) return '—';
+        const up = ps.filter(p => p.status === 'uploaded').length;
+        const bad = ps.filter(p => p.status === 'failed').length;
+        if (bad) return `<span class="badge bad">${up}/${ps.length}</span>`;
+        return up === ps.length
+            ? `<span class="badge ok">${up}</span>`
+            : `<span class="badge warn">${up}/${ps.length}</span>`;
+    };
+
     async function refresh() {
         const res = await api('/api/admin/status');
         if (res.status === 401) {
@@ -23,6 +35,9 @@
 
         $('#c-total').textContent = s.counts.total;
         $('#c-synced').textContent = s.counts.synced;
+        const ph = s.photos || { pending: 0, uploaded: 0, failed: 0 };
+        $('#c-photos').textContent = ph.uploaded + (ph.pending ? ` (+${ph.pending} pending)` : '')
+            + (ph.failed ? ` (${ph.failed} failed)` : '');
         $('#c-pending').textContent = s.counts.pending + (s.counts.failed ? ` (+${s.counts.failed} declined)` : '');
 
         const badge = $('#zoho-badge');
@@ -62,9 +77,10 @@
               <td>${new Date(l.receivedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
               <td>${rating}</td>
               <td>${name}</td><td>${contact}</td><td>${interests}</td>
+              <td>${photoCell(l)}</td>
               <td><span class="badge ${badgeCls}" title="${z.error || ''}">${zText}</span></td>
               <td>${retry}</td></tr>`;
-        }).join('') || '<tr><td colspan="7" style="color:#888">No enquiries recorded yet.</td></tr>';
+        }).join('') || '<tr><td colspan="8" style="color:#888">No enquiries recorded yet.</td></tr>';
         return true;
     }
 

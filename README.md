@@ -44,7 +44,7 @@ Leads scope.
    admin → **Add Client** → **Self Client**.
 2. In `/admin.html` → *Connect Zoho CRM*, paste the Client ID and Secret.
 3. In the console's **Generate Code** tab, use scope
-   `ZohoCRM.modules.leads.CREATE,ZohoCRM.modules.notes.CREATE`,
+   `ZohoCRM.modules.leads.CREATE,ZohoCRM.modules.notes.CREATE,ZohoCRM.modules.attachments.CREATE`,
    duration 10 minutes → **Create**.
 4. Paste the one-time code into the admin page within a few minutes.
 
@@ -61,6 +61,21 @@ generated, so a token made with only `leads.CREATE` cannot write notes. The
 app detects this, says so on the admin badge, and falls back to putting the
 full detail in the Description — nothing is ever dropped — but reconnecting
 with both scopes is what gets you the tidy Notes.
+
+## Photographs from the customer's phone
+
+The thank-you screen shows a QR code. Scanning it opens a private upload page
+on the visitor's **own phone, over their own mobile data** — so this path is
+unaffected by the show's wifi. Photographs are downscaled in their browser
+(2000px, JPEG) and attach to their lead in Zoho.
+
+- The link is tied to one enquiry, unguessable, and expires after seven days,
+  so a visitor can also upload later from home where the photographs are.
+- Attachments are a third Zoho module: without
+  `ZohoCRM.modules.attachments.CREATE` the photographs are held on the server
+  and the admin page says so.
+- A photograph waits if its lead has not reached Zoho yet, then attaches once
+  it has — nothing is dropped for arriving early.
 
 ## Changing the form
 

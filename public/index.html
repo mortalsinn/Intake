@@ -15,12 +15,7 @@
 <body>
   <header class="masthead">
     <div class="masthead-inner">
-      <div class="wordmark">Ironwood<small>Stair &amp; Rail Inc.</small></div>
-      <svg class="flourish" viewBox="0 0 400 22" aria-hidden="true">
-        <path d="M10 11 C 70 -6, 130 28, 190 11 M390 11 C 330 -6, 270 28, 210 11"
-              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        <circle cx="200" cy="11" r="4" fill="currentColor"/>
-      </svg>
+      <img class="brand-wide" src="logo-wide.png" alt="Ironwood Stair &amp; Rail Inc." />
       <h1 id="headline">Let's talk about your project</h1>
       <p id="subhead"></p>
     </div>
@@ -44,7 +39,7 @@
   <!-- attract screen: what the booth shows between visitors -->
   <div id="attract" class="attract" hidden>
     <div class="attract-inner">
-      <div class="wordmark grand">Ironwood<small>Stair &amp; Rail Inc.</small></div>
+      <img class="brand-stacked" src="logo-stacked.png" alt="Ironwood Stair &amp; Rail Inc." />
       <p class="attract-line" id="attract-line">Custom stairs, railings, architectural metalwork &amp; glass — crafted in Calgary</p>
       <div class="attract-cta">Touch to begin</div>
     </div>
@@ -74,6 +69,15 @@
       </svg>
       <h2 id="thanks-headline">Thanks — you're all set!</h2>
       <p id="thanks-sub">We'll be in touch soon.</p>
+      <!-- Photographs come from the customer's OWN phone over their OWN
+           data, so this path is unaffected by the show's wifi. -->
+      <div class="qr-panel" id="qr-panel" hidden>
+        <p class="qr-title">Have photographs of your project?</p>
+        <p class="qr-sub">Scan this code with your phone camera to send them to us.<br />
+           The link remains active for seven days.</p>
+        <div class="qr-frame" id="qr-frame"></div>
+      </div>
+
       <p class="thanks-reset">Touch anywhere to continue</p>
       <!-- Staff control, but worded as FOLLOW-UP TIMING rather than a grade:
            a visitor who glances over sees us planning their callback, not

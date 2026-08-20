@@ -16,6 +16,7 @@ const fs = require('fs');
 const os = require('os');
 const crypto = require('crypto');
 const express = require('express');
+const QRCode = require('qrcode');
 
 const { createStore } = require('./lib/store');
 const { validateLead } = require('./lib/validate');
@@ -63,7 +64,9 @@ app.get('/api/status', (req, res) => {
         // A refused write outranks the optimistic scope guess: proof beats
         // assumption, and env-var connections can only be proven this way.
         zohoNotes: z ? (zoho.canWriteNotes(z) && !noteScopeProblem) : false,
+        zohoPhotos: z ? (zoho.canWriteAttachments(z) && !attachmentScopeProblem) : false,
         counts: store.counts(),
+        photos: store.photoCounts(),
     });
 });
 
@@ -77,15 +80,105 @@ app.post('/api/leads', (req, res) => {
     const errors = validateLead(req.body, cfg);
     if (errors.length) return res.status(400).json({ error: errors.join('; '), errors });
 
-    const { added } = store.addLead({
+    const { added, uploadToken } = store.addLead({
         id: req.body.id,
         submittedAt: req.body.submittedAt,
         fields: req.body.fields,
     });
     // The disk write above is the durable receipt — respond now, push later.
     // Retries from the iPad land here again with the same id and dedupe.
-    res.json({ ok: true, duplicate: !added });
+    // uploadUrl comes back so the kiosk can show the customer a QR code.
+    res.json({ ok: true, duplicate: !added, uploadUrl: uploadPath(req, uploadToken) });
     if (added) setImmediate(pushPending);
+});
+
+/**
+ * The staff priority tap, which lands a moment after the lead itself.
+ *
+ * No PIN: the id is a client-generated UUID nobody else holds, the window is
+ * seconds wide, and a PIN prompt between "Submit" and the next visitor would
+ * never survive a real booth.
+ */
+app.post('/api/leads/:id/priority', (req, res) => {
+    const priority = String(req.body?.priority || '').slice(0, 60);
+    if (!priority) return res.status(400).json({ error: 'No priority given.' });
+    const lead = store.setPriority(req.params.id, priority);
+    if (!lead) return res.status(404).json({ error: 'No such enquiry.' });
+    // Priority is in; nothing left to wait for.
+    store.releaseHold(req.params.id);
+    res.json({ ok: true });
+    setImmediate(pushPending);
+});
+
+// The address a customer's phone must reach. Behind Render's proxy the
+// original scheme arrives in x-forwarded-proto; without it a phone would be
+// handed an http:// link to an https-only host.
+function uploadPath(req, token) {
+    if (!token) return null;
+    const proto = (req.get('x-forwarded-proto') || req.protocol || 'http').split(',')[0];
+    return `${proto}://${req.get('host')}/u/${token}`;
+}
+
+/** QR image for an upload link, drawn server-side so the kiosk needs no library. */
+app.get('/api/qr', async (req, res) => {
+    const url = String(req.query.url || '');
+    if (!/^https?:\/\//.test(url)) return res.status(400).send('bad url');
+    try {
+        const svg = await QRCode.toString(url, {
+            type: 'svg', margin: 1, errorCorrectionLevel: 'M',
+            color: { dark: '#1d1d1d', light: '#ffffff' },
+        });
+        res.type('image/svg+xml').set('Cache-Control', 'no-store').send(svg);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+// ---------- customer photo upload (their phone, their data) ----------
+
+app.get('/u/:token', (req, res) => {
+    const lead = store.leadByUploadToken(req.params.token);
+    if (!lead) return res.status(404).sendFile(path.join(__dirname, 'public', 'upload-expired.html'));
+    res.sendFile(path.join(__dirname, 'public', 'upload.html'));
+});
+
+/** What the upload page needs to know about itself. */
+app.get('/u/:token/info', (req, res) => {
+    const lead = store.leadByUploadToken(req.params.token);
+    if (!lead) return res.status(404).json({ error: 'This link has expired.' });
+    const cfg = formConfig();
+    res.json({
+        firstName: lead.fields.firstName || '',
+        company: cfg.show.company || 'Ironwood Stair & Rail',
+        already: (lead.photos || []).length,
+    });
+});
+
+const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
+
+app.post('/u/:token/photos', express.json({ limit: '24mb' }), (req, res) => {
+    const lead = store.leadByUploadToken(req.params.token);
+    if (!lead) return res.status(404).json({ error: 'This link has expired.' });
+
+    const items = Array.isArray(req.body?.photos) ? req.body.photos : [];
+    if (!items.length) return res.status(400).json({ error: 'No photographs received.' });
+    if ((lead.photos || []).length + items.length > 12) {
+        return res.status(400).json({ error: 'That is more photographs than we can accept for one enquiry.' });
+    }
+
+    let saved = 0;
+    for (const item of items.slice(0, 12)) {
+        const m = /^data:(image\/(?:jpeg|png|webp|heic));base64,(.+)$/i.exec(String(item.dataUrl || ''));
+        if (!m) continue;
+        const buffer = Buffer.from(m[2], 'base64');
+        if (!buffer.length || buffer.length > MAX_PHOTO_BYTES) continue;
+        store.addPhoto(lead.id, { buffer, filename: item.name, mimeType: m[1] });
+        saved++;
+    }
+    if (!saved) return res.status(400).json({ error: 'Those files could not be read as photographs.' });
+
+    res.json({ ok: true, saved });
+    setImmediate(pushPhotos);
 });
 
 // ---------- admin ----------
@@ -109,6 +202,7 @@ app.get('/api/admin/status', requirePin, (req, res) => {
             grantedScopes: z.grantedScopes || '',
         } : { connected: false, requiredScope: zoho.REQUIRED_SCOPE },
         counts: store.counts(),
+        photos: store.photoCounts(),
         leads: store.getLeads().slice().reverse(),
     });
 });
@@ -151,7 +245,7 @@ app.get('/api/admin/export.csv', requirePin, (req, res) => {
     const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
     // boothRating is second, next to the name — it's the column you sort by
     // on Monday morning, not something to hunt for at the far right.
-    const header = ['receivedAt', 'boothRating', ...cfg.fields.map(f => f.id), 'zohoStatus', 'zohoLeadId', 'zohoError'];
+    const header = ['receivedAt', 'boothRating', ...cfg.fields.map(f => f.id), 'photos', 'zohoStatus', 'zohoLeadId', 'zohoError'];
     const rows = store.getLeads().map(l => [
         l.receivedAt,
         l.fields._boothRating || '',
@@ -159,6 +253,7 @@ app.get('/api/admin/export.csv', requirePin, (req, res) => {
             const v = l.fields[f.id];
             return Array.isArray(v) ? v.join('; ') : v ?? '';
         }),
+        (l.photos || []).filter(p => p.status === 'uploaded').length,
         l.zoho.status, l.zoho.leadId || '', l.zoho.error || '',
     ]);
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
@@ -174,6 +269,7 @@ let pushing = false;
 // is short until a write is refused — and a per-lead log line is invisible at
 // a booth. This turns it into a banner on the admin page and the kiosk.
 let noteScopeProblem = null;
+let attachmentScopeProblem = null;
 
 async function pushPending() {
     if (pushing) return;
@@ -239,8 +335,50 @@ async function pushPending() {
     }
 }
 
+/**
+ * Push held photographs onto their leads in Zoho.
+ *
+ * Separate from pushPending because a photograph can only attach once the
+ * lead exists in the CRM — a customer who uploads while the lead is still
+ * queued must not lose the photo, so it simply waits its turn.
+ */
+let pushingPhotos = false;
+
+async function pushPhotos() {
+    if (pushingPhotos) return;
+    const cfg = store.getZoho();
+    if (!cfg) return;
+    pushingPhotos = true;
+    try {
+        for (const lead of store.leadsWithPendingPhotos()) {
+            if (!lead.zoho.leadId) continue; // lead not in Zoho yet — wait
+            for (const photo of (lead.photos || []).filter(p => p.status === 'pending')) {
+                try {
+                    const buffer = store.readPhoto(photo.file);
+                    await zoho.createAttachment(cfg, lead.zoho.leadId, {
+                        buffer, filename: photo.filename, mimeType: photo.mimeType,
+                    });
+                    store.markPhoto(lead.id, photo.file, { status: 'uploaded' });
+                    console.log(`[zoho] photograph attached to lead ${lead.zoho.leadId}`);
+                } catch (err) {
+                    if (err.scopeProblem) attachmentScopeProblem = err.message;
+                    store.markPhoto(lead.id, photo.file, {
+                        status: (photo.attempts || 0) >= 4 ? 'failed' : 'pending',
+                        attempts: (photo.attempts || 0) + 1,
+                        error: err.message,
+                    });
+                    console.warn(`[zoho] photograph upload failed: ${err.message}`);
+                }
+            }
+        }
+    } finally {
+        pushingPhotos = false;
+    }
+}
+
 if (require.main === module) {
-    setInterval(pushPending, 45 * 1000);
+    setInterval(pushPending, 15 * 1000);   // tighter than the hold, so a held lead moves promptly
+    setInterval(pushPhotos, 60 * 1000);
     app.listen(PORT, '0.0.0.0', () => {
         const nets = Object.values(os.networkInterfaces()).flat()
             .filter(n => n && n.family === 'IPv4' && !n.internal)

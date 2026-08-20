@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#141b22" />
+  <title>Ironwood Stair &amp; Rail — Send Photographs</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="phone">
+  <header class="phone-head">
+    <img class="brand-phone" src="/logo-wide.png" alt="Ironwood Stair &amp; Rail Inc." />
+  </header>
+
+  <main class="phone-body">
+    <div class="phone-card">
+      <h1 id="lede">Send us photographs of your project</h1>
+      <p class="phone-sub">
+        Photographs help our team prepare an accurate estimate before we speak.
+        Include the full staircase or railing where possible, and a closer view
+        of any detail that matters to you.
+      </p>
+
+      <label class="pick" for="picker">
+        <span class="pick-icon" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2.4">
+            <rect x="5" y="13" width="38" height="28" rx="4"/>
+            <path d="M17 13l3-5h8l3 5"/>
+            <circle cx="24" cy="27" r="8"/>
+          </svg>
+        </span>
+        <span class="pick-text">
+          <strong>Choose photographs</strong>
+          <small>Up to 12 images from your phone</small>
+        </span>
+      </label>
+      <input id="picker" type="file" accept="image/*" multiple hidden />
+
+      <div id="thumbs" class="thumbs"></div>
+
+      <button id="send" class="submit" hidden>Send photographs</button>
+      <div id="msg" class="phone-msg"></div>
+
+      <div id="done" class="phone-done" hidden>
+        <div class="done-mark">✓</div>
+        <h2>Thank you</h2>
+        <p id="done-sub">Your photographs have been added to your enquiry.</p>
+        <button id="more" class="ghost-btn">Send more photographs</button>
+      </div>
+
+      <p class="phone-foot">
+        This link is private to your enquiry and remains active for seven days.
+        Photographs are used only to prepare your estimate.
+      </p>
+    </div>
+  </main>
+
+  <script src="/upload.js"></script>
+</body>
+</html>

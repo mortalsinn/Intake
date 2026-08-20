@@ -25,9 +25,8 @@
     const loadDead = () => JSON.parse(localStorage.getItem(DEAD_KEY) || '[]');
 
     let syncing = false;
-    let holdFlush = false; // true while the thank-you screen awaits a staff rating
     async function flushQueue() {
-        if (syncing || holdFlush) return;
+        if (syncing) return;
         syncing = true;
         try {
             let queue = loadQueue();
@@ -39,6 +38,10 @@
                         body: JSON.stringify(item),
                     });
                     if (res.ok) {
+                        const body = await res.json().catch(() => ({}));
+                        // The server owns the upload token, so the QR can only
+                        // be drawn once the lead has actually reached it.
+                        if (body.uploadUrl) showQr(body.uploadUrl);
                         queue = queue.filter(q => q.id !== item.id);
                         saveQueue(queue);
                     } else if (res.status === 400) {
@@ -366,10 +369,12 @@
         render();
         window.scrollTo(0, 0);
 
-        // Sync is HELD while the thank-you shows: those few seconds are the
-        // staff's window to tap a lead temperature, and it has to reach the
-        // server inside the same record. The iPad queue keeps it durable.
-        holdFlush = true;
+        // Sent straight away: the QR code needs the server's upload token, so
+        // the lead has to arrive before the thank-you card can be useful. The
+        // server holds the Zoho push briefly so a priority tap still catches
+        // the same record — see holdUntil in server.js.
+        flushQueue();
+
         const thanks = $('#thanks');
         const strip = $('#rate-strip');
         strip.querySelectorAll('button').forEach(b => b.classList.remove('on'));
@@ -377,26 +382,59 @@
         const dismiss = () => {
             thanks.hidden = true;
             clearTimeout(t);
-            holdFlush = false;
-            flushQueue();
+            clearQr();
             // Back to the attract screen so the next visitor walks up to the
             // welcome, not someone else's form.
             showAttract();
         };
-        const t = setTimeout(dismiss, 8000);
+        // Longer than before: there is a QR code to read now, and the card
+        // must stay up long enough for a customer to scan it.
+        const t = setTimeout(dismiss, 30000);
         thanks.addEventListener('click', (e) => {
-            if (e.target.closest('.rate-strip')) return; // rating taps don't dismiss
+            // Taps on the staff strip or the QR must not close the card.
+            if (e.target.closest('.rate-strip') || e.target.closest('.qr-panel')) return;
             dismiss();
-        }, { once: false });
+        });
         strip.onclick = (e) => {
             const btn = e.target.closest('button[data-rate]');
             if (!btn) return;
             strip.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === btn));
-            const q = loadQueue();
-            const item = q.find(x => x.id === record.id);
-            if (item) { item.fields._boothRating = btn.dataset.rate; saveQueue(q); }
+            // Straight to the server: the lead has already been sent, so the
+            // priority has to catch up with it there rather than in the queue.
+            fetch(`/api/leads/${encodeURIComponent(record.id)}/priority`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ priority: btn.dataset.rate }),
+            }).catch(() => { /* the lead is already safe; priority is a bonus */ });
         };
     });
+
+    // ---------- photograph QR ----------
+
+    /**
+     * Draw the QR for the lead just submitted.
+     *
+     * Only shown while the thank-you card is up, and cleared with it — the
+     * next visitor must never be handed the previous customer's link.
+     */
+    async function showQr(url) {
+        const panel = $('#qr-panel');
+        const frame = $('#qr-frame');
+        if (!panel || !frame) return;
+        try {
+            const svg = await (await fetch(`/api/qr?url=${encodeURIComponent(url)}`)).text();
+            if (!svg.startsWith('<svg')) throw new Error('bad qr');
+            frame.innerHTML = svg;
+            panel.hidden = false;
+        } catch {
+            panel.hidden = true; // no QR beats a broken one
+        }
+    }
+
+    function clearQr() {
+        const panel = $('#qr-panel');
+        if (panel) { panel.hidden = true; $('#qr-frame').innerHTML = ''; }
+    }
 
     // ---------- attract screen + idle reset ----------
 

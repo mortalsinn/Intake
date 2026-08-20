@@ -28,6 +28,9 @@ test('updateLead moves status and counts follow', () => {
     store.addLead({ id: 'b', fields: {} });
     store.updateLead('a', { status: 'synced', leadId: 'z1' });
     assert.deepEqual(store.counts(), { total: 2, synced: 1, pending: 1, failed: 0 });
+    // 'b' is inside its grace period, so it is deliberately withheld
+    assert.equal(store.pendingLeads().length, 0);
+    store.releaseHold('b');
     assert.equal(store.pendingLeads().length, 1);
 });
 

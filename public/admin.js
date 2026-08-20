@@ -14,7 +14,7 @@
             sessionStorage.removeItem('iw_admin_pin');
             $('#panel').hidden = true;
             $('#pin-gate').hidden = false;
-            $('#pin-msg').textContent = pin ? 'Wrong PIN.' : '';
+            $('#pin-msg').textContent = pin ? 'Incorrect PIN.' : '';
             return false;
         }
         const s = await res.json();
@@ -23,22 +23,22 @@
 
         $('#c-total').textContent = s.counts.total;
         $('#c-synced').textContent = s.counts.synced;
-        $('#c-pending').textContent = s.counts.pending + (s.counts.failed ? ` (+${s.counts.failed} failed)` : '');
+        $('#c-pending').textContent = s.counts.pending + (s.counts.failed ? ` (+${s.counts.failed} declined)` : '');
 
         const badge = $('#zoho-badge');
         if (!s.zoho.connected) {
             badge.className = 'badge bad';
-            badge.textContent = 'Not connected — leads are held safely here';
+            badge.textContent = 'Not connected — enquiries are held securely on this server';
             $('#zoho-setup').open = true;
         } else if (!s.zoho.hasLeadScope) {
             badge.className = 'badge warn';
-            badge.textContent = `Connected (${s.zoho.datacenter}) — token missing Leads scope, reconnect`;
+            badge.textContent = `Connected (${s.zoho.datacenter}) — token is missing the Leads permission; please reconnect`;
         } else if (!s.zoho.hasNoteScope) {
             // Leads still land; the booth detail falls back into Description.
             badge.className = 'badge bad';
             badge.textContent = s.zoho.noteScopeProblem
-                ? 'Zoho REFUSED a note — this token lacks the Notes scope. Reconnect below, then hit "Retry failed".'
-                : 'Connected — but no Notes scope. Reconnect to file details as Notes.';
+                ? 'Zoho declined a note — this token lacks the Notes permission. Reconnect below, then select "Retry unsent".'
+                : 'Connected — Notes permission missing. Reconnect to file details as Notes.';
             $('#zoho-setup').open = true;
         } else {
             badge.className = 'badge ok';
@@ -53,17 +53,18 @@
             const interests = Array.isArray(f.interests) ? f.interests.join(', ') : '';
             const z = l.zoho || {};
             const badgeCls = z.status === 'synced' ? 'ok' : z.status === 'failed' ? 'bad' : 'warn';
-            const zText = z.status === 'synced' ? (z.noteError ? 'in Zoho (note failed)' : 'in Zoho')
-                : z.status === 'failed' ? `failed: ${z.error || ''}` : 'waiting';
-            const retry = z.status === 'failed' ? `<button class="ghost" data-retry="${l.id}">retry</button>` : '';
-            const rating = f._boothRating || '';
+            const zText = z.status === 'synced' ? (z.noteError ? 'Recorded — note failed' : 'Recorded')
+                : z.status === 'failed' ? `Declined: ${z.error || ''}` : 'Awaiting transfer';
+            const retry = z.status === 'failed' ? `<button class="ghost" data-retry="${l.id}">Retry</button>` : '';
+            // Shorten the CRM-facing phrasing for the table column.
+            const rating = (f._boothRating || '').replace(/\s*—.*$/, '');
             return `<tr>
               <td>${new Date(l.receivedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
-              <td>${/hot/i.test(rating) ? '🔥 Hot' : rating}</td>
+              <td>${rating}</td>
               <td>${name}</td><td>${contact}</td><td>${interests}</td>
               <td><span class="badge ${badgeCls}" title="${z.error || ''}">${zText}</span></td>
               <td>${retry}</td></tr>`;
-        }).join('') || '<tr><td colspan="7" style="color:#888">No leads yet — go get \'em.</td></tr>';
+        }).join('') || '<tr><td colspan="7" style="color:#888">No enquiries recorded yet.</td></tr>';
         return true;
     }
 
@@ -106,7 +107,7 @@
         const data = await res.json();
         if (res.ok) {
             msg.className = 'msg ok';
-            msg.textContent = 'Connected! Pending leads are syncing now.';
+            msg.textContent = 'Connected. Pending enquiries are now transferring.';
             $('#z-code').value = '';
             $('#zoho-setup').open = false;
         } else {

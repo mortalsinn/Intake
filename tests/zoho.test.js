@@ -51,37 +51,37 @@ test('the note carries every answer, in labelled sections', () => {
         consent: true,
         _boothRating: 'HOT LEAD',
     }), formConfig);
-    assert.match(note.Note_Title, /Booth intake/);
+    assert.match(note.Note_Title, /Project enquiry/);
     const c = note.Note_Content;
-    assert.match(c, /BOOTH ASSESSMENT/);
+    assert.match(c, /FOLLOW-UP/);
     assert.match(c, /HOT LEAD/);
-    assert.match(c, /CONTACT/);
+    assert.match(c, /CONTACT DETAILS/);
     assert.match(c, /\(403\) 555-0188/);
-    assert.match(c, /WHAT THEY WANT/);
+    assert.match(c, /PROJECT REQUIREMENTS/);
     assert.match(c, /Interior railing, Mirrors/);
-    assert.match(c, /FROM THE CONVERSATION/);
+    assert.match(c, /ADDITIONAL DETAILS/);
     assert.match(c, /oak to iron, has photos/);
     assert.match(c, /CONSENT/);
-    assert.match(c, /Agreed to be contacted/);
+    assert.match(c, /Consent given for contact/);
 });
 
 test('note omits sections that have no answers — no empty headings', () => {
     const note = buildNote(lead({ lastName: 'Woo', phone: '1' }), formConfig);
-    assert.doesNotMatch(note.Note_Content, /BOOTH ASSESSMENT/);
-    assert.doesNotMatch(note.Note_Content, /WHAT THEY WANT/);
-    assert.doesNotMatch(note.Note_Content, /FROM THE CONVERSATION/);
+    assert.doesNotMatch(note.Note_Content, /FOLLOW-UP/);
+    assert.doesNotMatch(note.Note_Content, /PROJECT REQUIREMENTS/);
+    assert.doesNotMatch(note.Note_Content, /ADDITIONAL DETAILS/);
 });
 
 test('refused consent is stated loudly in the note', () => {
     const note = buildNote(lead({ lastName: 'W', phone: '1', consent: false }), formConfig);
-    assert.match(note.Note_Content, /NOT GIVEN — do not contact/);
+    assert.match(note.Note_Content, /CONSENT NOT GIVEN — do not contact/);
 });
 
 test('withDetail is the no-notes-scope fallback: nothing is dropped', () => {
     const r = buildLeadRecord(lead({
         lastName: 'W', phone: '1', notes: 'oak to iron', timeline: '1–3 months', _boothRating: 'HOT LEAD',
     }), formConfig, { withDetail: true });
-    assert.match(r.Description, /Booth assessment: HOT LEAD/);
+    assert.match(r.Description, /Follow-up: HOT LEAD/);
     assert.match(r.Description, /oak to iron/);
     assert.match(r.Description, /1–3 months/);
 });
@@ -98,7 +98,7 @@ test('never builds a record Zoho must refuse: Last_Name and Company always set',
     const r = buildLeadRecord(lead({ firstName: 'Sam', phone: '1' }), formConfig);
     assert.equal(r.Last_Name, 'Sam');
     const r2 = buildLeadRecord(lead({ phone: '1' }), formConfig);
-    assert.equal(r2.Last_Name, 'Unknown (home show)');
+    assert.equal(r2.Last_Name, 'Name not provided');
     assert.equal(r2.Company, 'Homeowner');
 });
 

@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#141b22" />
-  <title>Ironwood Stair &amp; Rail — Tell us about your project</title>
+  <title>Ironwood Stair &amp; Rail — Project Enquiry</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -29,7 +29,7 @@
   <main class="kiosk-body">
     <div class="kiosk-card">
       <div class="card-head">
-        <span class="card-hint">Takes about a minute</span>
+        <span class="card-hint">Approximately one minute</span>
         <button type="button" id="reset-btn" class="reset-btn">↺ Start over</button>
       </div>
       <form id="lead-form" autocomplete="off" novalidate></form>
@@ -38,15 +38,15 @@
 
   <footer class="kiosk-foot">
     <div id="sync-pill" class="sync-pill ok" hidden></div>
-    <a class="staff-link" href="admin.html" aria-label="Staff admin">⚙</a>
+    <a class="staff-link" href="admin.html" aria-label="Staff administration">⚙</a>
   </footer>
 
   <!-- attract screen: what the booth shows between visitors -->
   <div id="attract" class="attract" hidden>
     <div class="attract-inner">
       <div class="wordmark grand">Ironwood<small>Stair &amp; Rail Inc.</small></div>
-      <p class="attract-line" id="attract-line">Custom stairs &amp; railings, built in Calgary</p>
-      <div class="attract-cta">Tap anywhere to start</div>
+      <p class="attract-line" id="attract-line">Custom stairs, railings, architectural metalwork &amp; glass — crafted in Calgary</p>
+      <div class="attract-cta">Touch to begin</div>
     </div>
     <svg class="attract-rail" viewBox="0 0 640 190" aria-hidden="true" preserveAspectRatio="xMidYMax meet">
       <!-- stylized descending stair with balusters and handrail -->
@@ -74,16 +74,18 @@
       </svg>
       <h2 id="thanks-headline">Thanks — you're all set!</h2>
       <p id="thanks-sub">We'll be in touch soon.</p>
-      <p class="thanks-reset">Tap anywhere for the next visitor</p>
-      <!-- staff-only, tapped after the visitor steps away -->
+      <p class="thanks-reset">Touch anywhere to continue</p>
+      <!-- Staff control, but worded as FOLLOW-UP TIMING rather than a grade:
+           a visitor who glances over sees us planning their callback, not
+           ranking them. Same signal reaches the CRM either way.
+           data-rate is what lands in Zoho — plain ASCII, since Zoho renders
+           an emoji in these fields as a bare "?". -->
       <div class="rate-strip" id="rate-strip">
-        <span class="rate-label">Staff assessment</span>
+        <span class="rate-label">Follow-up timing</span>
         <div class="rate-options">
-          <!-- data-rate is what reaches the CRM: plain ASCII, because Zoho
-               renders an emoji in these fields as a bare "?". -->
-          <button type="button" data-rate="Hot lead">Hot Lead</button>
-          <button type="button" data-rate="Warm lead">Warm Lead</button>
-          <button type="button" data-rate="Browsing only">Browsing</button>
+          <button type="button" data-rate="Priority — contact within the week">Within the week</button>
+          <button type="button" data-rate="Standard — contact within two weeks">Within two weeks</button>
+          <button type="button" data-rate="Send information — no call required">Send information</button>
         </div>
       </div>
     </div>

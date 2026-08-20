@@ -5,18 +5,18 @@
     "leadStatus": "Home Show",
     "submitLabel": "Submit",
     "timeZone": "America/Edmonton",
-    "headline": "Let's talk about your project",
-    "attractLine": "Custom stairs, railings, metalwork & glass — built in Calgary",
-    "subhead": "Leave your details and we'll follow up after the show.",
-    "thanks": "Thanks — you're all set!",
-    "thanksSub": "We'll be in touch soon. Enjoy the show!"
+    "headline": "Tell us about your project",
+    "attractLine": "Custom stairs, railings, architectural metalwork & glass — crafted in Calgary",
+    "subhead": "Share your details and a member of our team will follow up after the show.",
+    "thanks": "Thank you",
+    "thanksSub": "Your details have been received. A member of our team will be in touch shortly."
   },
   "companyFallback": "Homeowner",
   "requirePhoneOrEmail": true,
   "fields": [
     {
       "id": "firstName",
-      "section": "About you",
+      "section": "Your details",
       "label": "First name",
       "crmLabel": "Name",
       "type": "text",
@@ -26,7 +26,7 @@
     },
     {
       "id": "lastName",
-      "section": "About you",
+      "section": "Your details",
       "label": "Last name",
       "crmLabel": "Surname",
       "type": "text",
@@ -37,8 +37,8 @@
     },
     {
       "id": "phone",
-      "section": "About you",
-      "label": "Phone",
+      "section": "Your details",
+      "label": "Phone number",
       "type": "tel",
       "zoho": "Phone",
       "half": true,
@@ -46,29 +46,29 @@
     },
     {
       "id": "email",
-      "section": "About you",
-      "label": "Email",
+      "section": "Your details",
+      "label": "Email address",
       "type": "email",
       "zoho": "Email",
       "half": true,
-      "placeholder": "you@example.com"
+      "placeholder": "name@example.com"
     },
     {
       "id": "contactPref",
-      "section": "About you",
-      "label": "Best way to reach you?",
+      "section": "Your details",
+      "label": "Preferred method of contact",
       "crmLabel": "Prefers",
       "type": "choice",
       "options": [
-        "Call",
-        "Text",
+        "Phone call",
+        "Text message",
         "Email"
       ]
     },
     {
       "id": "city",
-      "section": "About you",
-      "label": "City / neighbourhood",
+      "section": "Your details",
+      "label": "City or community",
       "crmLabel": "City",
       "type": "text",
       "zoho": "City",
@@ -84,9 +84,21 @@
       ]
     },
     {
+      "id": "discuss",
+      "section": "Your project",
+      "label": "What would you like to discuss?",
+      "crmLabel": "Wants to discuss",
+      "type": "choice",
+      "options": [
+        "Design",
+        "Pricing",
+        "Both"
+      ]
+    },
+    {
       "id": "interests",
       "section": "Your project",
-      "label": "What are you thinking about?",
+      "label": "Which services are you interested in?",
       "crmLabel": "Interested in",
       "type": "multi",
       "groups": [
@@ -126,53 +138,53 @@
     {
       "id": "projectType",
       "section": "Your project",
-      "label": "Is this for…",
+      "label": "Is this for an existing home or a new build?",
       "crmLabel": "Project",
       "type": "choice",
       "options": [
-        "Updating our current home",
-        "A new build",
-        "Not sure yet"
+        "Existing home",
+        "New build",
+        "Undecided"
       ]
     },
     {
       "id": "timeline",
       "section": "Your project",
-      "label": "When would you like it done?",
+      "label": "What is your intended timeline?",
       "crmLabel": "Timeline",
       "type": "choice",
       "options": [
         "As soon as possible",
-        "1–3 months",
-        "3–6 months",
-        "Just gathering ideas"
+        "Within 1–3 months",
+        "Within 3–6 months",
+        "Researching options"
       ]
     },
     {
       "id": "budget",
       "section": "Your project",
-      "label": "Rough budget in mind? (no pressure — it helps us point you right)",
+      "label": "Approximate budget, if you have one in mind",
       "crmLabel": "Budget",
       "type": "choice",
       "options": [
-        "Under $5K",
-        "$5K – $15K",
-        "$15K+",
-        "Still exploring"
+        "Under $5,000",
+        "$5,000 – $15,000",
+        "Over $15,000",
+        "Prefer not to say"
       ]
     },
     {
       "id": "notes",
-      "section": "Anything else",
-      "label": "Anything else we should know?",
+      "section": "Additional information",
+      "label": "Additional details",
       "crmLabel": "Notes",
       "type": "textarea",
-      "placeholder": "Existing railing? Photos on your phone? Rough measurements?"
+      "placeholder": "Existing railing, approximate measurements, photographs — anything that helps us prepare."
     },
     {
       "id": "consent",
-      "section": "Anything else",
-      "label": "Yes, you can contact me about my project.",
+      "section": "Additional information",
+      "label": "I consent to being contacted about my project.",
       "type": "consent",
       "required": true
     }

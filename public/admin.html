@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ironwood Intake — Staff Admin</title>
+  <title>Ironwood Stair &amp; Rail — Staff Administration</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body class="admin">
   <div class="wordmark">Ironwood<small>Stair &amp; Rail Inc.</small></div>
-  <h1>Home Show Intake — Staff Admin</h1>
+  <h1>Home Show Intake — Staff Administration</h1>
 
   <div id="pin-gate">
     <div class="card" style="max-width:380px">
-      <h3>Staff PIN</h3>
-      <input id="pin" type="tel" inputmode="numeric" placeholder="PIN (printed where the server runs)" />
-      <button id="pin-go">Unlock</button>
+      <h3>Staff access</h3>
+      <input id="pin" type="tel" inputmode="numeric" placeholder="Enter staff PIN" />
+      <button id="pin-go">Sign in</button>
       <div id="pin-msg" class="msg bad"></div>
     </div>
   </div>
@@ -22,14 +22,14 @@
   <div id="panel" hidden>
     <div class="cards">
       <div class="card"><h3>Captured</h3><div class="big" id="c-total">–</div></div>
-      <div class="card"><h3>In Zoho</h3><div class="big" id="c-synced">–</div></div>
-      <div class="card"><h3>Waiting</h3><div class="big" id="c-pending">–</div></div>
+      <div class="card"><h3>Recorded in Zoho</h3><div class="big" id="c-synced">–</div></div>
+      <div class="card"><h3>Awaiting transfer</h3><div class="big" id="c-pending">–</div></div>
       <div class="card">
         <h3>Zoho CRM</h3>
         <div id="zoho-badge" class="badge warn">checking…</div>
         <div style="margin-top:10px">
-          <button class="ghost" id="btn-export">Download CSV</button>
-          <button class="ghost" id="btn-retry">Retry failed</button>
+          <button class="ghost" id="btn-export">Export CSV</button>
+          <button class="ghost" id="btn-retry">Retry unsent</button>
         </div>
       </div>
     </div>
@@ -37,7 +37,7 @@
     <details id="zoho-setup">
       <summary style="cursor:pointer;font-weight:600">Connect / reconnect Zoho CRM</summary>
       <div class="card" style="margin-top:12px;max-width:560px">
-        <p style="margin-top:0">One-time setup, ~5 minutes:</p>
+        <p style="margin-top:0">One-time setup, approximately five minutes:</p>
         <ol style="line-height:1.7">
           <li>Open <code>api-console.zoho.com</code> (log in as the CRM admin) → <b>Add Client</b> → <b>Self Client</b>.</li>
           <li>Copy the <b>Client ID</b> and <b>Client Secret</b> below.</li>
@@ -60,9 +60,9 @@
       </div>
     </details>
 
-    <h2 style="font-size:19px">Leads (newest first)</h2>
+    <h2 style="font-size:19px">Enquiries (most recent first)</h2>
     <table>
-      <thead><tr><th>When</th><th>Rating</th><th>Name</th><th>Contact</th><th>Interested in</th><th>Zoho</th><th></th></tr></thead>
+      <thead><tr><th>When</th><th>Follow-up</th><th>Name</th><th>Contact</th><th>Services</th><th>Zoho</th><th></th></tr></thead>
       <tbody id="rows"></tbody>
     </table>
   </div>

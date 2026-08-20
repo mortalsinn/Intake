@@ -84,31 +84,31 @@
 
         // Worst news first — a booth glance must surface the real problem.
         if (dead) {
-            pill.textContent = `${dead} need attention — see admin`;
+            pill.textContent = `${dead} entries require attention — see admin`;
             pill.className = 'sync-pill dead';
         } else if (serverStatus && !serverStatus.zohoConnected) {
             const held = serverStatus.counts.total;
-            pill.textContent = `⚠ Zoho not connected${held ? ` — ${held} held safely` : ''}`;
+            pill.textContent = `⚠ Zoho not connected${held ? ` — ${held} entries held securely` : ''}`;
             pill.className = 'sync-pill dead';
         } else if (serverStatus && serverStatus.zohoConnected && !serverStatus.zohoNotes) {
             // Leads are landing, but their booth detail is not — worth saying
             // out loud, because the leads themselves look perfectly healthy.
-            pill.textContent = '⚠ Leads OK, notes blocked — see admin';
+            pill.textContent = '⚠ Leads received, notes blocked — see admin';
             pill.className = 'sync-pill dead';
         } else if (serverStatus && serverStatus.counts.failed) {
-            pill.textContent = `${serverStatus.counts.failed} rejected by Zoho — see admin`;
+            pill.textContent = `${serverStatus.counts.failed} declined by Zoho — see admin`;
             pill.className = 'sync-pill dead';
         } else if (waiting) {
-            pill.textContent = `${waiting} saved on iPad — waiting for wifi`;
+            pill.textContent = `${waiting} saved on this device — awaiting connection`;
             pill.className = 'sync-pill wait';
         } else if (serverStatus && serverStatus.counts.pending) {
-            pill.textContent = `${serverStatus.counts.pending} waiting to reach Zoho`;
+            pill.textContent = `${serverStatus.counts.pending} awaiting transfer to Zoho`;
             pill.className = 'sync-pill wait';
         } else if (serverStatus && serverStatus.counts.synced) {
-            pill.textContent = `${serverStatus.counts.synced} in Zoho`;
+            pill.textContent = `${serverStatus.counts.synced} recorded in Zoho`;
             pill.className = 'sync-pill ok';
         } else {
-            pill.textContent = serverStatus ? 'Ready' : 'Offline — entries save on this iPad';
+            pill.textContent = serverStatus ? 'Ready' : 'Offline — entries are saved on this device';
             pill.className = serverStatus ? 'sync-pill ok' : 'sync-pill wait';
         }
     }
@@ -139,7 +139,7 @@
         if (field.type === 'choice' || field.type === 'multi') {
             wrap.innerHTML = `
               <label class="title">${field.label}${field.required ? ' <span class="req">*</span>' : ''}</label>
-              <div class="err">Please pick one.</div>`;
+              <div class="err">Please select an option.</div>`;
             const err = wrap.querySelector('.err');
             // Options can be flat or grouped under headings ("Glass", …);
             // a flat list is just one unlabelled group.
@@ -307,15 +307,15 @@
     function fieldProblem(field, v, has) {
         if (field.required && !has) {
             return field.type === 'consent'
-                ? "Please tick this box so we're allowed to follow up."
-                : "This one's required.";
+                ? "Please confirm consent so that we may contact you."
+                : "This field is required.";
         }
         if (!has) return null;
         if (field.type === 'tel' && String(v).replace(/\D/g, '').length < 7) {
-            return 'That number looks short — mind double-checking?';
+            return 'That number appears incomplete — please check it.';
         }
         if (field.type === 'email' && !/^\S+@\S+\.\S+$/.test(String(v).trim())) {
-            return "That email doesn't look complete.";
+            return "That email address appears incomplete.";
         }
         return null;
     }
@@ -335,7 +335,7 @@
         const errBox = $('#form-err');
         if (config.requirePhoneOrEmail && !String(state.phone || '').trim() && !String(state.email || '').trim()) {
             ok = false;
-            errBox.textContent = 'We need a phone number or an email so we can reach you.';
+            errBox.textContent = 'Please provide a phone number or an email address so we can reach you.';
             errBox.classList.add('show');
             firstBad = firstBad || form.querySelector('.field[data-id="phone"]');
         }

@@ -68,6 +68,21 @@ test('an uploaded photograph releases its local copy', () => {
     assert.equal(fs.existsSync(path.join(dir, 'photos', rec.file)), false);
 });
 
+test('retry recovers a failed photograph — the usual cause is a token since fixed', () => {
+    const store = createStore(tmp());
+    store.addLead({ id: 'a', fields: {} });
+    const rec = store.addPhoto('a', { buffer: jpg });
+    store.markPhoto('a', rec.file, { status: 'failed', attempts: 4, error: 'OAUTH_SCOPE_MISMATCH' });
+    assert.equal(store.leadsWithPendingPhotos().length, 0, 'failed photo is not retried on its own');
+
+    assert.ok(store.retry() >= 1);
+    const back = store.getLeads()[0].photos[0];
+    assert.equal(back.status, 'pending');
+    assert.equal(back.attempts, 0, 'attempt count resets or it fails again immediately');
+    assert.equal(back.error, undefined);
+    assert.equal(store.leadsWithPendingPhotos().length, 1);
+});
+
 test('the staff priority tap catches the lead inside its grace period', () => {
     const store = createStore(tmp());
     store.addLead({ id: 'a', fields: { lastName: 'Woo' } });

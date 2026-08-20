@@ -35,7 +35,11 @@ const formConfigPath = path.join(__dirname, 'config', 'form.json');
 const formConfig = () => JSON.parse(fs.readFileSync(formConfigPath, 'utf8'));
 
 const app = express();
-app.use(express.json({ limit: '100kb' }));
+// Scoped to /api on purpose. A global parser runs BEFORE the route-specific
+// one, so a global 100kb cap silently rejected every photograph upload with
+// 413 no matter what limit the upload route asked for. Form posts stay
+// small and capped; the photo route sets its own limit below.
+app.use('/api', express.json({ limit: '100kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ---------- kiosk ----------
@@ -234,9 +238,11 @@ app.post('/api/admin/retry', requirePin, (req, res) => {
     // Clear the sticky flag: the admin is retrying because they believe they
     // fixed the token, and a stale banner would hide whether they did.
     noteScopeProblem = null;
+    attachmentScopeProblem = null;
     zoho._resetTokenCache(); // a new token may be waiting behind the old cache
     const n = store.retry(req.body?.id);
     setImmediate(pushPending);
+    setImmediate(pushPhotos);
     res.json({ ok: true, retried: n });
 });
 

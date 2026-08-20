@@ -234,6 +234,22 @@ app.post('/api/admin/zoho/connect', requirePin, async (req, res) => {
     }
 });
 
+/**
+ * Prove the Zoho connection works, without writing anything.
+ *
+ * Read-only on purpose: a connection self-test that leaves junk leads behind
+ * is one nobody runs. The one thing worth knowing before doors open is
+ * whether this copy's token still has full Leads access.
+ */
+app.get('/api/admin/verify', requirePin, async (req, res) => {
+    const cfg = store.getZoho();
+    if (!cfg) return res.json({ connected: false, detail: 'No Zoho connection on this server.' });
+    const result = await zoho.verifyConnection(cfg);
+    // A proven read clears a stale refusal — the token has evidently changed.
+    if (result.canReadLeads) { noteScopeProblem = null; attachmentScopeProblem = null; }
+    res.json({ connected: true, datacenter: cfg.datacenter, ...result });
+});
+
 app.post('/api/admin/retry', requirePin, (req, res) => {
     // Clear the sticky flag: the admin is retrying because they believe they
     // fixed the token, and a stale banner would hide whether they did.

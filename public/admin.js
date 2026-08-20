@@ -92,6 +92,23 @@
 
     $('#btn-retry').addEventListener('click', () => api('/api/admin/retry', { method: 'POST', body: '{}' }).then(refresh));
 
+    $('#btn-verify').addEventListener('click', async () => {
+        const msg = $('#verify-msg');
+        msg.className = 'msg';
+        msg.textContent = 'Checking…';
+        try {
+            const r = await (await api('/api/admin/verify')).json();
+            msg.className = `msg ${r.canReadLeads ? 'ok' : 'bad'}`;
+            msg.textContent = r.canReadLeads
+                ? `✓ ${r.detail}`
+                : `✗ ${r.detail || 'Connection could not be verified.'}`;
+        } catch {
+            msg.className = 'msg bad';
+            msg.textContent = 'Could not reach the server.';
+        }
+        refresh();
+    });
+
     document.addEventListener('click', (e) => {
         const id = e.target?.dataset?.retry;
         if (id) api('/api/admin/retry', { method: 'POST', body: JSON.stringify({ id }) }).then(refresh);

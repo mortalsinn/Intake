@@ -184,9 +184,16 @@
     {
       "id": "consent",
       "section": "Additional information",
-      "label": "I consent to being contacted about my project.",
+      "label": "I agree that Ironwood Stair & Rail Inc. may contact me about my enquiry by phone, text or email, and may send me occasional information about their products, services and promotions.",
       "type": "consent",
       "required": true
     }
-  ]
+  ],
+  "company": {
+    "name": "Ironwood Stair & Rail Inc.",
+    "address": "108-239 Mayland Pl NE, Calgary, AB T2E 7Z8",
+    "phone": "(403) 552-1007",
+    "email": "info@ironwoodstairs.com"
+  },
+  "consentFinePrint": "Ironwood Stair & Rail Inc., 108-239 Mayland Pl NE, Calgary, AB T2E 7Z8 · (403) 552-1007 · info@ironwoodstairs.com. You may withdraw your consent at any time by contacting us, or by using the unsubscribe link in any message we send."
 }

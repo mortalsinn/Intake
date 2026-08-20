@@ -62,7 +62,7 @@ test('the note carries every answer, in labelled sections', () => {
     assert.match(c, /ADDITIONAL DETAILS/);
     assert.match(c, /oak to iron, has photos/);
     assert.match(c, /CONSENT/);
-    assert.match(c, /Consent given for contact/);
+    assert.match(c, /Given .*Agreed to:/s);
 });
 
 test('note omits sections that have no answers — no empty headings', () => {

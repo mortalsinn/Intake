@@ -493,13 +493,6 @@ button.submit::after {
 .thanks-card p { color: var(--ink-soft); margin: 0; font-size: 19px; }
 .thanks-reset { margin-top: 22px !important; font-size: 15px !important; }
 
-/* Staff assessment — not for the visitor, so it reads as a discreet
-   internal control rather than part of the thank-you message. */
-.rate-strip {
-  margin-top: 28px;
-  padding-top: 18px;
-  border-top: 1px solid var(--line);
-}
 .rate-label {
   display: block;
   font-size: 11px;
@@ -695,3 +688,73 @@ body.phone .submit { margin-top: 18px; min-height: 58px; font-size: 18px; }
 }
 .brand-admin { display: block; width: 150px; height: auto; margin: 0 0 4px; }
 .brand-phone { display: block; width: min(170px, 46vw); height: auto; margin: 0 auto; }
+
+/* Consent fine print — legible, not hidden, but clearly secondary. */
+.fine-print {
+  margin: 10px 2px 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+/* ---- staff step: internal, shown only after the tablet comes back ---- */
+
+.staff-step {
+  position: fixed;
+  inset: 0;
+  z-index: 18;
+  display: grid;
+  place-items: center;
+  /* Visibly NOT the customer's screen — flat, dark, unbranded. */
+  background: rgba(20, 27, 34, 0.94);
+  animation: fadeIn 0.18s;
+}
+.staff-card {
+  background: var(--card);
+  border-radius: 18px;
+  padding: 34px 40px 26px;
+  text-align: center;
+  max-width: 560px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.staff-eyebrow {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--warn);
+}
+.staff-card h2 { font-size: 24px; margin: 0 0 6px; }
+.staff-sub { color: var(--ink-soft); margin: 0 0 22px; font-size: 16px; }
+.staff-options { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; }
+.staff-options button {
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 15px 22px;
+  min-height: 54px;
+  border-radius: 12px;
+  border: 1.5px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+  transition: transform 0.12s, background 0.15s, color 0.15s, border-color 0.15s;
+}
+.staff-options button:active { transform: scale(0.96); }
+.staff-options button:first-child {
+  background: linear-gradient(180deg, var(--bronze), var(--bronze-deep));
+  border-color: var(--bronze-deep);
+  color: #fff;
+}
+.staff-skip {
+  margin-top: 18px;
+  font: inherit;
+  font-size: 15px;
+  padding: 10px 18px;
+  border: none;
+  background: none;
+  color: var(--ink-soft);
+  text-decoration: underline;
+  cursor: pointer;
+}

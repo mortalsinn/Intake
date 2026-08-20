@@ -124,11 +124,17 @@
         wrap.dataset.id = field.id;
 
         if (field.type === 'consent') {
+            // The fine print sits with the tickbox on purpose: consent to
+            // marketing has to identify who is asking, how to reach them and
+            // how to withdraw it — beside the box, not buried in a footer.
+            const fine = config.consentFinePrint
+                ? `<p class="fine-print">${config.consentFinePrint}</p>` : '';
             wrap.innerHTML = `
               <div class="consent-row" role="checkbox" aria-checked="false" tabindex="0">
                 <div class="box">✓</div><span class="txt">${field.label}</span>
               </div>
-              <div class="err">Please tick this box so we're allowed to follow up.</div>`;
+              ${fine}
+              <div class="err">Please confirm consent so that we may contact you.</div>`;
             const row = wrap.querySelector('.consent-row');
             row.addEventListener('click', () => {
                 state[field.id] = !state[field.id];
@@ -375,39 +381,79 @@
         // the same record — see holdUntil in server.js.
         flushQueue();
 
+        // Naming the visitor on the staff step matters at a busy booth: two
+        // enquiries can stack up, and "How should Dana be followed up?" is
+        // unambiguous where "this enquiry" is not.
+        const name = [record.fields.firstName, record.fields.lastName]
+            .filter(Boolean).join(' ').trim();
+
         const thanks = $('#thanks');
-        const strip = $('#rate-strip');
-        strip.querySelectorAll('button').forEach(b => b.classList.remove('on'));
         thanks.hidden = false;
-        const dismiss = () => {
+
+        const close = ({ askStaff }) => {
             thanks.hidden = true;
             clearTimeout(t);
             clearQr();
-            // Back to the attract screen so the next visitor walks up to the
-            // welcome, not someone else's form.
+            // A deliberate tap means the tablet has come back to a person —
+            // in a booth that is staff, so ask for the priority. A timeout
+            // means nobody is holding it, so go straight back to the welcome
+            // rather than leaving an internal screen up in front of an
+            // empty booth.
+            if (askStaff) askPriority(record.id, name);
+            else showAttract();
+        };
+        // Long enough for a customer to actually read the QR and scan it.
+        const t = setTimeout(() => close({ askStaff: false }), 30000);
+        thanks.addEventListener('click', (e) => {
+            if (e.target.closest('.qr-panel')) return; // scanning is not dismissing
+            close({ askStaff: true });
+        });
+    });
+
+    // ---------- staff step: enquiry priority ----------
+
+    /**
+     * Ask staff to prioritise the enquiry that just came in.
+     *
+     * Shown only after a deliberate tap on the thank-you card, which in a
+     * booth is the moment the tablet is handed back — so the visitor never
+     * watches themselves being ranked. Skipping is a first-class option:
+     * at a busy booth an unanswered prompt must not block the next visitor.
+     */
+    function askPriority(leadId, who) {
+        const step = $('#staff-step');
+        if (!step) { showAttract(); return; }
+        $('#staff-who').textContent = who
+            ? `How should ${who} be followed up?`
+            : 'How should this enquiry be followed up?';
+
+        const finish = () => {
+            clearTimeout(bail);
+            step.onclick = null;
+            step.hidden = true;
             showAttract();
         };
-        // Longer than before: there is a QR code to read now, and the card
-        // must stay up long enough for a customer to scan it.
-        const t = setTimeout(dismiss, 30000);
-        thanks.addEventListener('click', (e) => {
-            // Taps on the staff strip or the QR must not close the card.
-            if (e.target.closest('.rate-strip') || e.target.closest('.qr-panel')) return;
-            dismiss();
-        });
-        strip.onclick = (e) => {
+        // If staff walk off mid-prompt, do not strand the booth on an
+        // internal screen — fall back to the welcome.
+        const bail = setTimeout(finish, 25000);
+
+        step.onclick = (e) => {
             const btn = e.target.closest('button[data-rate]');
-            if (!btn) return;
-            strip.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === btn));
-            // Straight to the server: the lead has already been sent, so the
-            // priority has to catch up with it there rather than in the queue.
-            fetch(`/api/leads/${encodeURIComponent(record.id)}/priority`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ priority: btn.dataset.rate }),
-            }).catch(() => { /* the lead is already safe; priority is a bonus */ });
+            if (btn) {
+                // Straight to the server: the lead has already been sent, so
+                // the priority catches up with it there, not in the queue.
+                fetch(`/api/leads/${encodeURIComponent(leadId)}/priority`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ priority: btn.dataset.rate }),
+                }).catch(() => { /* the lead is already safe; priority is a bonus */ });
+                finish();
+                return;
+            }
+            if (e.target.closest('#staff-skip')) finish();
         };
-    });
+        step.hidden = false;
+    }
 
     // ---------- photograph QR ----------
 

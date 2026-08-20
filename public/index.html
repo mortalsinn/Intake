@@ -74,24 +74,33 @@
       <div class="qr-panel" id="qr-panel" hidden>
         <p class="qr-title">Have photographs of your project?</p>
         <p class="qr-sub">Scan this code with your phone camera to send them to us.<br />
-           The link remains active for seven days.</p>
+           Photographs are used to prepare your estimate. The link remains
+           active for seven days.</p>
         <div class="qr-frame" id="qr-frame"></div>
       </div>
 
       <p class="thanks-reset">Touch anywhere to continue</p>
-      <!-- Staff control, but worded as FOLLOW-UP TIMING rather than a grade:
-           a visitor who glances over sees us planning their callback, not
-           ranking them. Same signal reaches the CRM either way.
-           data-rate is what lands in Zoho — plain ASCII, since Zoho renders
-           an emoji in these fields as a bare "?". -->
-      <div class="rate-strip" id="rate-strip">
-        <span class="rate-label">Staff use only — enquiry priority</span>
-        <div class="rate-options">
-          <button type="button" data-rate="High priority">High</button>
-          <button type="button" data-rate="Standard priority">Standard</button>
-          <button type="button" data-rate="Information only">Information only</button>
-        </div>
+    </div>
+  </div>
+
+  <!-- Staff step: deliberately NOT part of the visitor's thank-you card.
+       It appears only after someone taps to continue — the moment the
+       tablet comes back to staff — so a customer never sees themselves
+       being prioritised. If the card times out instead, nobody is holding
+       the iPad and this is skipped entirely.
+       data-rate is what lands in Zoho: plain ASCII, since Zoho renders an
+       emoji in these fields as a bare "?". -->
+  <div id="staff-step" class="staff-step" hidden>
+    <div class="staff-card">
+      <p class="staff-eyebrow">Staff use only</p>
+      <h2>Enquiry priority</h2>
+      <p class="staff-sub" id="staff-who">How should this enquiry be followed up?</p>
+      <div class="staff-options">
+        <button type="button" data-rate="High priority">High</button>
+        <button type="button" data-rate="Standard priority">Standard</button>
+        <button type="button" data-rate="Information only">Information only</button>
       </div>
+      <button type="button" class="staff-skip" id="staff-skip">Skip</button>
     </div>
   </div>
 

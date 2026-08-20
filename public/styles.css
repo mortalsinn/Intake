@@ -683,15 +683,15 @@ body.phone .submit { margin-top: 18px; min-height: 58px; font-size: 18px; }
    with transparency, so they sit straight on the dark ground. */
 .brand-wide {
   display: block;
-  width: min(300px, 62vw);
+  width: min(190px, 46vw);
   height: auto;
   margin: 0 auto;
 }
 .brand-stacked {
   display: block;
-  width: min(300px, 58vw);
+  width: min(340px, 62vw);
   height: auto;
-  margin: 0 auto 8px;
+  margin: 0 auto 10px;
 }
-.brand-admin { display: block; width: 210px; height: auto; margin: 0 0 4px; }
-.brand-phone { display: block; width: min(240px, 66vw); height: auto; margin: 0 auto; }
+.brand-admin { display: block; width: 150px; height: auto; margin: 0 0 4px; }
+.brand-phone { display: block; width: min(170px, 46vw); height: auto; margin: 0 auto; }

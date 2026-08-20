@@ -1,9 +1,9 @@
 // Service worker: cache the app shell so the kiosk loads even when the wifi
 // is down. API calls are never cached here — the app has its own queue and
 // form-config fallback in localStorage, which handle offline properly.
-const CACHE = 'iw-intake-v10';
+const CACHE = 'iw-intake-v11';
 const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'manifest.webmanifest',
-               'logo-wide.png', 'logo-stacked.png'];
+               'logo-mark.png', 'logo-stacked.png'];
 
 self.addEventListener('install', (e) => {
     e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));

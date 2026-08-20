@@ -9,7 +9,8 @@
     "attractLine": "Custom stairs, railings, architectural metalwork & glass — crafted in Calgary",
     "subhead": "Share your details and a member of our team will follow up after the show.",
     "thanks": "Thank you",
-    "thanksSub": "Your details have been received. A member of our team will be in touch shortly."
+    "thanksSub": "Your details have been received. A member of our team will be in touch shortly.",
+    "privacyUrl": "https://ironwoodstairs.com/about/privacy-policy/"
   },
   "companyFallback": "Homeowner",
   "requirePhoneOrEmail": true,
@@ -196,5 +197,5 @@
     "phone": "(403) 552-1007",
     "email": "info@ironwoodstairs.com"
   },
-  "consentFinePrint": "Ironwood Stair & Rail Inc., 108-239 Mayland Pl NE, Calgary, AB T2E 7Z8 · (403) 552-1007 · info@ironwoodstairs.com. You may withdraw your consent at any time by contacting us, or by using the unsubscribe link in any message we send."
+  "consentFinePrint": "Ironwood Stair & Rail Inc., 108-239 Mayland Pl NE, Calgary, AB T2E 7Z8 · (403) 552-1007 · info@ironwoodstairs.com. You may withdraw your consent at any time by contacting us, or by using the unsubscribe link in any message we send. How we handle your information: ironwoodstairs.com/about/privacy-policy/"
 }

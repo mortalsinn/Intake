@@ -53,7 +53,7 @@ test('the note carries every answer, in labelled sections', () => {
     }), formConfig);
     assert.match(note.Note_Title, /Project enquiry/);
     const c = note.Note_Content;
-    assert.match(c, /FOLLOW-UP/);
+    assert.match(c, /ENQUIRY PRIORITY/);
     assert.match(c, /HOT LEAD/);
     assert.match(c, /CONTACT DETAILS/);
     assert.match(c, /\(403\) 555-0188/);
@@ -67,7 +67,7 @@ test('the note carries every answer, in labelled sections', () => {
 
 test('note omits sections that have no answers — no empty headings', () => {
     const note = buildNote(lead({ lastName: 'Woo', phone: '1' }), formConfig);
-    assert.doesNotMatch(note.Note_Content, /FOLLOW-UP/);
+    assert.doesNotMatch(note.Note_Content, /ENQUIRY PRIORITY/);
     assert.doesNotMatch(note.Note_Content, /PROJECT REQUIREMENTS/);
     assert.doesNotMatch(note.Note_Content, /ADDITIONAL DETAILS/);
 });

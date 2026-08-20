@@ -1,9 +1,9 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { buildLeadRecord, normalizeDatacenter, apiBase } = require('../lib/zoho');
+const { buildLeadRecord, buildNote, canWriteNotes, normalizeDatacenter, apiBase } = require('../lib/zoho');
 
 const formConfig = {
-    show: { name: 'Renovation Home Show', leadSource: 'Home Show' },
+    show: { name: 'Renovation Home Show', leadSource: 'Home Show', timeZone: 'America/Edmonton' },
     companyFallback: 'Homeowner',
     fields: [
         { id: 'firstName', label: 'First name', type: 'text', zoho: 'First_Name' },
@@ -34,33 +34,64 @@ test('maps standard fields onto Zoho Lead fields', () => {
     assert.equal(r.Company, 'Homeowner');
 });
 
-test('non-Zoho fields land in Description, not dropped', () => {
-    const r = buildLeadRecord(lead({
-        lastName: 'Woo',
-        phone: '1',
-        interests: ['Interior railing', 'Stairs'],
+test('Description keeps the capture line and points at the Notes', () => {
+    const r = buildLeadRecord(lead({ lastName: 'Woo', phone: '1', notes: 'oak to iron' }), formConfig);
+    assert.match(r.Description, /^Captured at the Renovation Home Show/);
+    assert.match(r.Description, /Full details in Notes\./);
+    // the detail belongs in the note now, not smuggled into the description
+    assert.doesNotMatch(r.Description, /oak to iron/);
+});
+
+test('the note carries every answer, in labelled sections', () => {
+    const note = buildNote(lead({
+        firstName: 'Dana', lastName: 'Woo', phone: '(403) 555-0188', email: 'd@e.com', city: 'Cochrane',
+        interests: ['Interior railing', 'Mirrors'],
         timeline: '1–3 months',
-        notes: 'oak to iron',
+        notes: 'oak to iron, has photos',
         consent: true,
+        _boothRating: 'HOT LEAD',
     }), formConfig);
-    assert.match(r.Description, /Interior railing, Stairs/);
-    assert.match(r.Description, /1–3 months/);
+    assert.match(note.Note_Title, /Booth intake/);
+    const c = note.Note_Content;
+    assert.match(c, /BOOTH ASSESSMENT/);
+    assert.match(c, /HOT LEAD/);
+    assert.match(c, /CONTACT/);
+    assert.match(c, /\(403\) 555-0188/);
+    assert.match(c, /WHAT THEY WANT/);
+    assert.match(c, /Interior railing, Mirrors/);
+    assert.match(c, /FROM THE CONVERSATION/);
+    assert.match(c, /oak to iron, has photos/);
+    assert.match(c, /CONSENT/);
+    assert.match(c, /Agreed to be contacted/);
+});
+
+test('note omits sections that have no answers — no empty headings', () => {
+    const note = buildNote(lead({ lastName: 'Woo', phone: '1' }), formConfig);
+    assert.doesNotMatch(note.Note_Content, /BOOTH ASSESSMENT/);
+    assert.doesNotMatch(note.Note_Content, /WHAT THEY WANT/);
+    assert.doesNotMatch(note.Note_Content, /FROM THE CONVERSATION/);
+});
+
+test('refused consent is stated loudly in the note', () => {
+    const note = buildNote(lead({ lastName: 'W', phone: '1', consent: false }), formConfig);
+    assert.match(note.Note_Content, /NOT GIVEN — do not contact/);
+});
+
+test('withDetail is the no-notes-scope fallback: nothing is dropped', () => {
+    const r = buildLeadRecord(lead({
+        lastName: 'W', phone: '1', notes: 'oak to iron', timeline: '1–3 months', _boothRating: 'HOT LEAD',
+    }), formConfig, { withDetail: true });
+    assert.match(r.Description, /Booth assessment: HOT LEAD/);
     assert.match(r.Description, /oak to iron/);
-    assert.match(r.Description, /Consent: agreed/);
-    assert.match(r.Description, /Renovation Home Show/);
+    assert.match(r.Description, /1–3 months/);
 });
 
-test('booth rating leads the Description when staff tapped one', () => {
-    const r = buildLeadRecord(lead({ lastName: 'W', phone: '1', _boothRating: 'Hot lead 🔥' }), formConfig);
-    const lines = r.Description.split('\n');
-    assert.match(lines[1], /Booth assessment: Hot lead/);
-    const r2 = buildLeadRecord(lead({ lastName: 'W', phone: '1' }), formConfig);
-    assert.doesNotMatch(r2.Description, /Booth assessment/);
-});
-
-test('consent=false is recorded as NOT given', () => {
-    const r = buildLeadRecord(lead({ lastName: 'W', phone: '1', consent: false }), formConfig);
-    assert.match(r.Description, /Consent: NOT given/);
+test('canWriteNotes reads the granted scope string', () => {
+    assert.equal(canWriteNotes({ grantedScopes: 'ZohoCRM.modules.leads.CREATE' }), false);
+    assert.equal(canWriteNotes({ grantedScopes: 'ZohoCRM.modules.leads.CREATE,ZohoCRM.modules.notes.CREATE' }), true);
+    assert.equal(canWriteNotes({ grantedScopes: 'ZohoCRM.modules.ALL.ALL' }), true);
+    // unknown (env-var connection): try it rather than refuse pre-emptively
+    assert.equal(canWriteNotes({ grantedScopes: '' }), true);
 });
 
 test('never builds a record Zoho must refuse: Last_Name and Company always set', () => {

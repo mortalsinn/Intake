@@ -2,6 +2,7 @@
   "show": {
     "name": "Renovation Home Show",
     "leadSource": "Home Show",
+    "timeZone": "America/Edmonton",
     "headline": "Let's talk about your project",
     "attractLine": "Custom stairs, railings, metalwork & glass — built in Calgary",
     "subhead": "Leave your details and we'll follow up after the show.",
@@ -11,13 +12,13 @@
   "companyFallback": "Homeowner",
   "requirePhoneOrEmail": true,
   "fields": [
-    { "id": "firstName", "label": "First name", "type": "text", "zoho": "First_Name", "autocapitalize": "words", "half": true },
-    { "id": "lastName", "label": "Last name", "type": "text", "required": true, "zoho": "Last_Name", "autocapitalize": "words", "half": true },
+    { "id": "firstName", "label": "First name", "crmLabel": "Name", "type": "text", "zoho": "First_Name", "autocapitalize": "words", "half": true },
+    { "id": "lastName", "label": "Last name", "crmLabel": "Surname", "type": "text", "required": true, "zoho": "Last_Name", "autocapitalize": "words", "half": true },
     { "id": "phone", "label": "Phone", "type": "tel", "zoho": "Phone", "half": true, "placeholder": "(403) 555-0123" },
     { "id": "email", "label": "Email", "type": "email", "zoho": "Email", "half": true, "placeholder": "you@example.com" },
     { "id": "contactPref", "label": "Best way to reach you?", "crmLabel": "Prefers", "type": "choice", "options": ["Call", "Text", "Email"] },
     {
-      "id": "city", "label": "City / neighbourhood", "type": "text", "zoho": "City",
+      "id": "city", "label": "City / neighbourhood", "crmLabel": "City", "type": "text", "zoho": "City",
       "autocapitalize": "words",
       "suggest": ["Calgary", "Airdrie", "Cochrane", "Okotoks", "Chestermere", "Strathmore", "Acreage / rural"]
     },

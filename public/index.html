@@ -74,7 +74,10 @@
       <!-- staff-only, tapped after the visitor steps away -->
       <div class="rate-strip" id="rate-strip">
         <span class="rate-label">Staff:</span>
-        <button type="button" data-rate="Hot lead 🔥">🔥 Hot</button>
+        <!-- data-rate is what reaches the CRM: plain ASCII, because Zoho
+             renders an emoji in these fields as a bare "?". Emoji stays on
+             the button, where it actually helps someone tapping fast. -->
+        <button type="button" data-rate="HOT LEAD">🔥 Hot</button>
         <button type="button" data-rate="Warm">Warm</button>
         <button type="button" data-rate="Just browsing">Browsing</button>
       </div>

@@ -83,6 +83,8 @@ app.get('/api/admin/status', requirePin, (req, res) => {
             datacenter: z.datacenter,
             hasLeadScope: !z.grantedScopes || z.grantedScopes.split(/[\s,]+/)
                 .some(s => s.toLowerCase().startsWith('zohocrm.modules.leads')),
+            hasNoteScope: zoho.canWriteNotes(z),
+            requiredScope: zoho.REQUIRED_SCOPE,
             grantedScopes: z.grantedScopes || '',
         } : { connected: false, requiredScope: zoho.REQUIRED_SCOPE },
         counts: store.counts(),
@@ -155,10 +157,33 @@ async function pushPending() {
             const wait = Math.min((lead.zoho.attempts || 0) * 2, 15) * 60 * 1000;
             if (lead.zoho.lastTriedAt && Date.now() - Date.parse(lead.zoho.lastTriedAt) < wait) continue;
             try {
-                const record = zoho.buildLeadRecord(lead, formCfg);
-                const { leadId } = await zoho.createLead(cfg, record);
-                store.updateLead(lead.id, { status: 'synced', leadId, syncedAt: new Date().toISOString(), error: undefined });
-                console.log(`[zoho] synced lead ${lead.id} → ${leadId}`);
+                const notesOk = zoho.canWriteNotes(cfg);
+                // Already-created lead whose NOTE failed: post just the note,
+                // never a second lead.
+                let leadId = lead.zoho.leadId;
+                if (!leadId) {
+                    // withDetail only when notes are unavailable — the detail
+                    // has to live somewhere, so it falls back to Description.
+                    const record = zoho.buildLeadRecord(lead, formCfg, { withDetail: !notesOk });
+                    ({ leadId } = await zoho.createLead(cfg, record));
+                    store.updateLead(lead.id, { leadId });
+                }
+
+                let noteError;
+                if (notesOk) {
+                    try {
+                        await zoho.createNote(cfg, leadId, zoho.buildNote(lead, formCfg));
+                    } catch (noteErr) {
+                        noteError = noteErr.message;
+                        console.warn(`[zoho] lead ${leadId} created but note failed: ${noteErr.message}`);
+                    }
+                }
+
+                store.updateLead(lead.id, {
+                    status: 'synced', leadId, syncedAt: new Date().toISOString(),
+                    error: undefined, noteError,
+                });
+                console.log(`[zoho] synced lead ${lead.id} → ${leadId}${noteError ? ' (note FAILED)' : ''}`);
             } catch (err) {
                 store.updateLead(lead.id, {
                     // Permanent = Zoho rejected the data; retrying identical data

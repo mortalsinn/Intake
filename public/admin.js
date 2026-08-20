@@ -33,10 +33,16 @@
         } else if (!s.zoho.hasLeadScope) {
             badge.className = 'badge warn';
             badge.textContent = `Connected (${s.zoho.datacenter}) — token missing Leads scope, reconnect`;
+        } else if (!s.zoho.hasNoteScope) {
+            // Leads still land; the booth detail falls back into Description.
+            badge.className = 'badge warn';
+            badge.textContent = `Connected — but no Notes scope. Reconnect to file details as Notes.`;
+            $('#zoho-setup').open = true;
         } else {
             badge.className = 'badge ok';
             badge.textContent = `Connected — zoho.${s.zoho.datacenter}`;
         }
+        if (s.zoho.requiredScope) $('#scope-str').textContent = s.zoho.requiredScope;
 
         $('#rows').innerHTML = s.leads.map(l => {
             const f = l.fields || {};
@@ -45,7 +51,8 @@
             const interests = Array.isArray(f.interests) ? f.interests.join(', ') : '';
             const z = l.zoho || {};
             const badgeCls = z.status === 'synced' ? 'ok' : z.status === 'failed' ? 'bad' : 'warn';
-            const zText = z.status === 'synced' ? 'in Zoho' : z.status === 'failed' ? `failed: ${z.error || ''}` : 'waiting';
+            const zText = z.status === 'synced' ? (z.noteError ? 'in Zoho (note failed)' : 'in Zoho')
+                : z.status === 'failed' ? `failed: ${z.error || ''}` : 'waiting';
             const retry = z.status === 'failed' ? `<button class="ghost" data-retry="${l.id}">retry</button>` : '';
             const rating = f._boothRating || '';
             return `<tr>

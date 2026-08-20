@@ -44,13 +44,23 @@ Leads scope.
    admin → **Add Client** → **Self Client**.
 2. In `/admin.html` → *Connect Zoho CRM*, paste the Client ID and Secret.
 3. In the console's **Generate Code** tab, use scope
-   `ZohoCRM.modules.leads.CREATE`, duration 10 minutes → **Create**.
+   `ZohoCRM.modules.leads.CREATE,ZohoCRM.modules.notes.CREATE`,
+   duration 10 minutes → **Create**.
 4. Paste the one-time code into the admin page within a few minutes.
 
-Leads arrive in Zoho with `Lead Source = Home Show`, standard fields mapped
-(name/phone/email/city), and everything else — interests, timeline, notes,
-consent — in the Description. `trigger: ["workflow"]` is set, so your CRM
-assignment rules and notifications fire as if the lead was typed in by hand.
+Leads arrive with `Lead Source = Home Show`, standard fields mapped
+(name/phone/email/city), and a Description reading *"Captured at the
+&lt;show&gt; — &lt;when&gt;. Full details in Notes."* Everything from the booth —
+assessment, contact, what they want, the conversation, consent — is filed
+as a formatted **Note** on the lead, which is where the follow-up crew
+reads and replies. `trigger: ["workflow"]` is set, so CRM assignment rules
+and notifications fire as if the lead was typed in by hand.
+
+**Notes need their own scope.** Zoho freezes scopes when the code is
+generated, so a token made with only `leads.CREATE` cannot write notes. The
+app detects this, says so on the admin badge, and falls back to putting the
+full detail in the Description — nothing is ever dropped — but reconnecting
+with both scopes is what gets you the tidy Notes.
 
 ## Changing the form
 

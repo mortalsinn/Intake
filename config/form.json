@@ -59,12 +59,13 @@
       "section": "Your details",
       "label": "Preferred method of contact",
       "crmLabel": "Prefers",
-      "type": "choice",
+      "type": "multi",
       "options": [
         "Phone call",
         "Text message",
         "Email"
-      ]
+      ],
+      "hint": "Choose any that suit you"
     },
     {
       "id": "city",

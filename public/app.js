@@ -158,8 +158,13 @@
         }
 
         if (field.type === 'choice' || field.type === 'multi') {
+            // A multi-select looks identical to a single-select until you try
+            // a second tap, so say plainly that more than one is allowed.
+            const hint = field.hint
+                ? `<span class="field-hint">${field.hint}</span>`
+                : (field.type === 'multi' ? '<span class="field-hint">Choose as many as you like</span>' : '');
             wrap.innerHTML = `
-              <label class="title">${field.label}${field.required ? ' <span class="req">*</span>' : ''}</label>
+              <label class="title">${field.label}${field.required ? ' <span class="req">*</span>' : ''}${hint}</label>
               <div class="err">Please select an option.</div>`;
             const err = wrap.querySelector('.err');
             // Options can be flat or grouped under headings ("Glass", …);

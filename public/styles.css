@@ -947,3 +947,12 @@ body.phone .submit { margin-top: 18px; min-height: 58px; font-size: 18px; }
   color: #fff;
 }
 .lb-pick.on { background: var(--ok); }
+
+/* "you may pick more than one" — quiet, beside the question */
+.field-hint {
+  display: block;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--ink-soft);
+  margin-top: 3px;
+}

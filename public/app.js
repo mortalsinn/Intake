@@ -90,6 +90,11 @@
             const held = serverStatus.counts.total;
             pill.textContent = `⚠ Zoho not connected${held ? ` — ${held} held safely` : ''}`;
             pill.className = 'sync-pill dead';
+        } else if (serverStatus && serverStatus.zohoConnected && !serverStatus.zohoNotes) {
+            // Leads are landing, but their booth detail is not — worth saying
+            // out loud, because the leads themselves look perfectly healthy.
+            pill.textContent = '⚠ Leads OK, notes blocked — see admin';
+            pill.className = 'sync-pill dead';
         } else if (serverStatus && serverStatus.counts.failed) {
             pill.textContent = `${serverStatus.counts.failed} rejected by Zoho — see admin`;
             pill.className = 'sync-pill dead';

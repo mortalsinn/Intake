@@ -35,8 +35,10 @@
             badge.textContent = `Connected (${s.zoho.datacenter}) — token missing Leads scope, reconnect`;
         } else if (!s.zoho.hasNoteScope) {
             // Leads still land; the booth detail falls back into Description.
-            badge.className = 'badge warn';
-            badge.textContent = `Connected — but no Notes scope. Reconnect to file details as Notes.`;
+            badge.className = 'badge bad';
+            badge.textContent = s.zoho.noteScopeProblem
+                ? 'Zoho REFUSED a note — this token lacks the Notes scope. Reconnect below, then hit "Retry failed".'
+                : 'Connected — but no Notes scope. Reconnect to file details as Notes.';
             $('#zoho-setup').open = true;
         } else {
             badge.className = 'badge ok';

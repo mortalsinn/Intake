@@ -60,7 +60,9 @@ app.get('/api/status', (req, res) => {
     const z = store.getZoho();
     res.json({
         zohoConnected: !!z,
-        zohoNotes: z ? zoho.canWriteNotes(z) : false,
+        // A refused write outranks the optimistic scope guess: proof beats
+        // assumption, and env-var connections can only be proven this way.
+        zohoNotes: z ? (zoho.canWriteNotes(z) && !noteScopeProblem) : false,
         counts: store.counts(),
     });
 });
@@ -101,7 +103,8 @@ app.get('/api/admin/status', requirePin, (req, res) => {
             datacenter: z.datacenter,
             hasLeadScope: !z.grantedScopes || z.grantedScopes.split(/[\s,]+/)
                 .some(s => s.toLowerCase().startsWith('zohocrm.modules.leads')),
-            hasNoteScope: zoho.canWriteNotes(z),
+            hasNoteScope: zoho.canWriteNotes(z) && !noteScopeProblem,
+            noteScopeProblem,
             requiredScope: zoho.REQUIRED_SCOPE,
             grantedScopes: z.grantedScopes || '',
         } : { connected: false, requiredScope: zoho.REQUIRED_SCOPE },
@@ -134,6 +137,10 @@ app.post('/api/admin/zoho/connect', requirePin, async (req, res) => {
 });
 
 app.post('/api/admin/retry', requirePin, (req, res) => {
+    // Clear the sticky flag: the admin is retrying because they believe they
+    // fixed the token, and a stale banner would hide whether they did.
+    noteScopeProblem = null;
+    zoho._resetTokenCache(); // a new token may be waiting behind the old cache
     const n = store.retry(req.body?.id);
     setImmediate(pushPending);
     res.json({ ok: true, retried: n });
@@ -162,6 +169,11 @@ app.get('/api/admin/export.csv', requirePin, (req, res) => {
 // ---------- background pusher ----------
 
 let pushing = false;
+// Sticky: set when Zoho refuses a note for scope reasons. An env-var
+// connection carries no granted-scope list, so the app cannot know the token
+// is short until a write is refused — and a per-lead log line is invisible at
+// a booth. This turns it into a banner on the admin page and the kiosk.
+let noteScopeProblem = null;
 
 async function pushPending() {
     if (pushing) return;
@@ -193,6 +205,7 @@ async function pushPending() {
                         await zoho.createNote(cfg, leadId, zoho.buildNote(lead, formCfg));
                     } catch (noteErr) {
                         noteError = noteErr.message;
+                        if (noteErr.scopeProblem) noteScopeProblem = noteErr.message;
                         console.warn(`[zoho] lead ${leadId} created but note failed: ${noteErr.message}`);
                     }
                 }

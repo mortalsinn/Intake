@@ -54,6 +54,25 @@ test('Zoho connection falls back to env vars when data/ is wiped (ephemeral host
     }
 });
 
+test('retry() recovers a SYNCED lead whose note failed', () => {
+    const store = createStore(tmp());
+    store.addLead({ id: 'a', fields: {} });
+    store.updateLead('a', { status: 'synced', leadId: 'z1', noteError: 'OAUTH_SCOPE_MISMATCH' });
+    assert.equal(store.pendingLeads().length, 0, 'synced lead is not pending');
+    assert.equal(store.retry(), 1, 'note failure must be recoverable');
+    const back = store.pendingLeads()[0];
+    assert.equal(back.zoho.noteError, undefined);
+    // leadId survives, so the pusher posts only the note and not a second lead
+    assert.equal(back.zoho.leadId, 'z1');
+});
+
+test('retry() leaves a fully-synced lead alone', () => {
+    const store = createStore(tmp());
+    store.addLead({ id: 'a', fields: {} });
+    store.updateLead('a', { status: 'synced', leadId: 'z1' });
+    assert.equal(store.retry(), 0);
+});
+
 test('retry() puts failed leads back in the pending pool', () => {
     const store = createStore(tmp());
     store.addLead({ id: 'a', fields: {} });

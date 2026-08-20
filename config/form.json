@@ -15,6 +15,7 @@
     { "id": "lastName", "label": "Last name", "type": "text", "required": true, "zoho": "Last_Name", "autocapitalize": "words", "half": true },
     { "id": "phone", "label": "Phone", "type": "tel", "zoho": "Phone", "half": true, "placeholder": "(403) 555-0123" },
     { "id": "email", "label": "Email", "type": "email", "zoho": "Email", "half": true, "placeholder": "you@example.com" },
+    { "id": "contactPref", "label": "Best way to reach you?", "type": "choice", "options": ["Call", "Text", "Email"] },
     {
       "id": "city", "label": "City / neighbourhood", "type": "text", "zoho": "City",
       "autocapitalize": "words",
@@ -43,10 +44,22 @@
       ]
     },
     {
+      "id": "projectType",
+      "label": "Is this for…",
+      "type": "choice",
+      "options": ["Updating our current home", "A new build", "Not sure yet"]
+    },
+    {
       "id": "timeline",
       "label": "When would you like it done?",
       "type": "choice",
       "options": ["As soon as possible", "1–3 months", "3–6 months", "Just gathering ideas"]
+    },
+    {
+      "id": "budget",
+      "label": "Rough budget in mind? (no pressure — it helps us point you right)",
+      "type": "choice",
+      "options": ["Under $5K", "$5K – $15K", "$15K+", "Still exploring"]
     },
     { "id": "notes", "label": "Anything else we should know?", "type": "textarea", "placeholder": "Existing railing? Photos on your phone? Rough measurements?" },
     { "id": "consent", "label": "Yes, you can contact me about my project.", "type": "consent", "required": true }

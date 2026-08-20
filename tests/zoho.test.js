@@ -50,6 +50,14 @@ test('non-Zoho fields land in Description, not dropped', () => {
     assert.match(r.Description, /Renovation Home Show/);
 });
 
+test('booth rating leads the Description when staff tapped one', () => {
+    const r = buildLeadRecord(lead({ lastName: 'W', phone: '1', _boothRating: 'Hot lead 🔥' }), formConfig);
+    const lines = r.Description.split('\n');
+    assert.match(lines[1], /Booth assessment: Hot lead/);
+    const r2 = buildLeadRecord(lead({ lastName: 'W', phone: '1' }), formConfig);
+    assert.doesNotMatch(r2.Description, /Booth assessment/);
+});
+
 test('consent=false is recorded as NOT given', () => {
     const r = buildLeadRecord(lead({ lastName: 'W', phone: '1', consent: false }), formConfig);
     assert.match(r.Description, /Consent: NOT given/);

@@ -25,8 +25,9 @@
     const loadDead = () => JSON.parse(localStorage.getItem(DEAD_KEY) || '[]');
 
     let syncing = false;
+    let holdFlush = false; // true while the thank-you screen awaits a staff rating
     async function flushQueue() {
-        if (syncing) return;
+        if (syncing || holdFlush) return;
         syncing = true;
         try {
             let queue = loadQueue();
@@ -311,20 +312,42 @@
         const queue = loadQueue();
         queue.push(record);
         saveQueue(queue);   // durable on the iPad before anything else happens
-        flushQueue();
 
         // Reset for the next visitor.
         for (const k of Object.keys(state)) delete state[k];
         render();
         window.scrollTo(0, 0);
 
+        // Sync is HELD while the thank-you shows: those few seconds are the
+        // staff's window to tap a lead temperature, and it has to reach the
+        // server inside the same record. The iPad queue keeps it durable.
+        holdFlush = true;
         const thanks = $('#thanks');
+        const strip = $('#rate-strip');
+        strip.querySelectorAll('button').forEach(b => b.classList.remove('on'));
         thanks.hidden = false;
-        // After the thank-you, hand the booth back to the attract screen so
-        // the next visitor walks up to the welcome, not someone else's form.
-        const dismiss = () => { thanks.hidden = true; clearTimeout(t); showAttract(); };
-        const t = setTimeout(dismiss, 6000);
-        thanks.addEventListener('click', dismiss, { once: true });
+        const dismiss = () => {
+            thanks.hidden = true;
+            clearTimeout(t);
+            holdFlush = false;
+            flushQueue();
+            // Back to the attract screen so the next visitor walks up to the
+            // welcome, not someone else's form.
+            showAttract();
+        };
+        const t = setTimeout(dismiss, 8000);
+        thanks.addEventListener('click', (e) => {
+            if (e.target.closest('.rate-strip')) return; // rating taps don't dismiss
+            dismiss();
+        }, { once: false });
+        strip.onclick = (e) => {
+            const btn = e.target.closest('button[data-rate]');
+            if (!btn) return;
+            strip.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === btn));
+            const q = loadQueue();
+            const item = q.find(x => x.id === record.id);
+            if (item) { item.fields._boothRating = btn.dataset.rate; saveQueue(q); }
+        };
     });
 
     // ---------- attract screen + idle reset ----------

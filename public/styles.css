@@ -413,6 +413,34 @@ button.submit::after {
 .thanks-card p { color: var(--ink-soft); margin: 0; font-size: 19px; }
 .thanks-reset { margin-top: 22px !important; font-size: 15px !important; }
 
+/* staff rating strip — deliberately quiet; it's not for the visitor */
+.rate-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 26px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--line);
+}
+.rate-label { font-size: 13px; color: var(--ink-soft); margin-right: 4px; }
+.rate-strip button {
+  font: inherit;
+  font-size: 14px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.rate-strip button.on {
+  background: var(--bronze);
+  border-color: var(--bronze-deep);
+  color: #fff;
+  font-weight: 600;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }

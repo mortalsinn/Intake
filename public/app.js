@@ -533,27 +533,11 @@
         const name = [record.fields.firstName, record.fields.lastName]
             .filter(Boolean).join(' ').trim();
 
-        const thanks = $('#thanks');
-        thanks.hidden = false;
-
-        const close = ({ askStaff }) => {
-            thanks.hidden = true;
-            clearTimeout(t);
-            clearQr();
-            // A deliberate tap means the tablet has come back to a person —
-            // in a booth that is staff, so ask for the priority. A timeout
-            // means nobody is holding it, so go straight back to the welcome
-            // rather than leaving an internal screen up in front of an
-            // empty booth.
-            if (askStaff) askPriority(record.id, name);
-            else showAttract();
-        };
-        // Long enough for a customer to actually read the QR and scan it.
-        const t = setTimeout(() => close({ askStaff: false }), 30000);
-        thanks.addEventListener('click', (e) => {
-            if (e.target.closest('.qr-panel')) return; // scanning is not dismissing
-            close({ askStaff: true });
-        });
+        // Three screens, each waiting for a tap rather than a clock:
+        //   QR  ->  Thank you  ->  staff priority  ->  welcome
+        // The safety timeouts below exist only so an abandoned iPad returns
+        // to the welcome screen; they are far longer than anyone needs.
+        showQrStep(record.id, name);
     });
 
     // ---------- inspiration gallery ----------
@@ -747,6 +731,62 @@
 
     $('#gallery-done').addEventListener('click', () => { $('#gallery').hidden = true; });
 
+    // ---------- after submitting: QR, thank you, staff ----------
+
+    // Generous. Nobody should be hurried while fishing a phone out of a
+    // pocket; these only exist so an abandoned booth finds its way home.
+    const QR_BAIL_MS = 5 * 60 * 1000;
+    const THANKS_BAIL_MS = 2 * 60 * 1000;
+
+    /** Step 1: the QR, on its own, going nowhere until it is tapped. */
+    async function showQrStep(leadId, who) {
+        const panel = $('#qr-step');
+        if (!panel) return showThanksStep(leadId, who);
+
+        // Give the code a moment to arrive. Offline, or a failure drawing it,
+        // means there is nothing to scan — so skip to the thank you rather
+        // than presenting an empty box.
+        const ready = await awaitQr(5000);
+        if (!ready) return showThanksStep(leadId, who);
+
+        const done = () => {
+            clearTimeout(bail);
+            panel.onclick = null;
+            panel.hidden = true;
+            showThanksStep(leadId, who);
+        };
+        const bail = setTimeout(() => {
+            clearTimeout(bail);
+            panel.onclick = null;
+            panel.hidden = true;
+            clearQr();
+            showAttract();   // nobody there; do not leave a QR on screen
+        }, QR_BAIL_MS);
+
+        panel.onclick = done;
+        panel.hidden = false;
+    }
+
+    /** Step 2: the goodbye. Also waits to be tapped. */
+    function showThanksStep(leadId, who) {
+        const panel = $('#thanks');
+        clearQr();
+        const done = () => {
+            clearTimeout(bail);
+            panel.onclick = null;
+            panel.hidden = true;
+            askPriority(leadId, who);
+        };
+        const bail = setTimeout(() => {
+            clearTimeout(bail);
+            panel.onclick = null;
+            panel.hidden = true;
+            showAttract();   // nobody tapped, so nobody is holding it
+        }, THANKS_BAIL_MS);
+        panel.onclick = done;
+        panel.hidden = false;
+    }
+
     // ---------- staff step: enquiry priority ----------
 
     /**
@@ -810,23 +850,34 @@
      * Only shown while the thank-you card is up, and cleared with it — the
      * next visitor must never be handed the previous customer's link.
      */
+    // The QR is drawn only after the server answers with an upload token,
+    // which happens after the submit handler has already moved on. Without
+    // something to wait on, the QR step looked at an empty frame every time
+    // and skipped itself.
+    let qrDrawn = null;
+    const awaitQr = (ms) => new Promise((resolve) => {
+        if ($('#qr-frame')?.innerHTML.startsWith('<svg')) return resolve(true);
+        qrDrawn = resolve;
+        setTimeout(() => resolve(false), ms);
+    });
+
     async function showQr(url) {
-        const panel = $('#qr-panel');
         const frame = $('#qr-frame');
-        if (!panel || !frame) return;
+        if (!frame) return;
         try {
             const svg = await (await fetch(`/api/qr?url=${encodeURIComponent(url)}`)).text();
             if (!svg.startsWith('<svg')) throw new Error('bad qr');
-            frame.innerHTML = svg;
-            panel.hidden = false;
+            frame.innerHTML = svg;   // the QR SCREEN is shown by showQrStep
+            if (qrDrawn) { qrDrawn(true); qrDrawn = null; }
         } catch {
-            panel.hidden = true; // no QR beats a broken one
+            frame.innerHTML = '';    // no QR beats a broken one
+            if (qrDrawn) { qrDrawn(false); qrDrawn = null; }
         }
     }
 
     function clearQr() {
-        const panel = $('#qr-panel');
-        if (panel) { panel.hidden = true; $('#qr-frame').innerHTML = ''; }
+        const frame = $('#qr-frame');
+        if (frame) frame.innerHTML = '';
     }
 
     // ---------- attract screen + idle reset ----------
@@ -905,7 +956,7 @@
      */
     const visitorIsEngaged = () =>
         !$('#gallery').hidden || !$('#lightbox').hidden
-        || !$('#thanks').hidden || !$('#staff-step').hidden;
+        || !$('#thanks').hidden || !$('#staff-step').hidden || !$('#qr-step').hidden;
 
     /** Has anyone actually typed anything worth protecting? */
     const formHasAnswers = () => Object.values(state).some(v =>
@@ -956,6 +1007,15 @@
         $('#idle-check').hidden = true;
         armIdle();
     }
+
+    // DEMO ONLY — fires the idle prompt on demand so it can be shown off
+    // without waiting five minutes. Delete this block and the button in
+    // index.html when it is no longer wanted.
+    $('#demo-idle')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        clearTimeout(idleTimer);
+        askBeforeClearing();
+    });
 
     $('#idle-keep').addEventListener('click', keepGoing);
     $('#idle-clear').addEventListener('click', wipeAndGoHome);

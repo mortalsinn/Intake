@@ -41,6 +41,9 @@
   </main>
 
   <footer class="kiosk-foot">
+    <!-- DEMO ONLY — remove this button and its handler in app.js (search
+         "DEMO ONLY") once the timeout has been shown off. -->
+    <button type="button" id="demo-idle" class="demo-btn">Demo timeout</button>
     <div id="sync-pill" class="sync-pill ok" hidden></div>
     <a class="staff-link" href="admin.html" aria-label="Staff administration">⚙</a>
   </footer>
@@ -74,6 +77,20 @@
     </svg>
   </div>
 
+  <!-- QR step, on its own screen. It used to share the thank-you card and
+       time out after thirty seconds, which is no time at all for somebody
+       digging their phone out of a pocket. Nothing here is rushed. -->
+  <div id="qr-step" class="thanks" hidden>
+    <div class="thanks-card">
+      <h2>Have photographs of your project?</h2>
+      <p class="qr-sub">Scan this code with your phone camera to send them to us.<br />
+         Photographs help us prepare your estimate. The link stays active for
+         seven days, so you can also send them later from home.</p>
+      <div class="qr-frame" id="qr-frame"></div>
+      <p class="thanks-reset">Take your time — touch anywhere when you're finished</p>
+    </div>
+  </div>
+
   <div id="thanks" class="thanks" hidden>
     <div class="thanks-card">
       <svg class="thanks-check" viewBox="0 0 64 64" aria-hidden="true">
@@ -81,18 +98,8 @@
         <path class="tick" d="M20 33 L 29 42 L 45 24" fill="none" stroke-width="5"
               stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <h2 id="thanks-headline">Thanks — you're all set!</h2>
-      <p id="thanks-sub">We'll be in touch soon.</p>
-      <!-- Photographs come from the customer's OWN phone over their OWN
-           data, so this path is unaffected by the show's wifi. -->
-      <div class="qr-panel" id="qr-panel" hidden>
-        <p class="qr-title">Have photographs of your project?</p>
-        <p class="qr-sub">Scan this code with your phone camera to send them to us.<br />
-           Photographs are used to prepare your estimate. The link remains
-           active for seven days.</p>
-        <div class="qr-frame" id="qr-frame"></div>
-      </div>
-
+      <h2 id="thanks-headline">Thank you</h2>
+      <p id="thanks-sub">Your details have been received.</p>
       <p class="thanks-reset">Touch anywhere to continue</p>
     </div>
   </div>

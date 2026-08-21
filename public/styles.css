@@ -1058,3 +1058,17 @@ input::placeholder, textarea::placeholder {
   color: #a8a296;
   opacity: 1;              /* Firefox dims placeholders by default */
 }
+
+/* DEMO ONLY — remove with the button in index.html. */
+.demo-btn {
+  pointer-events: auto;
+  font: inherit;
+  font-size: 12px;
+  padding: 6px 12px;
+  margin-right: 10px;
+  border-radius: 999px;
+  border: 1px dashed rgba(221, 202, 147, 0.5);
+  background: rgba(221, 202, 147, 0.08);
+  color: var(--gold-pale);
+  cursor: pointer;
+}

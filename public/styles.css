@@ -1098,7 +1098,21 @@ input::placeholder, textarea::placeholder {
   gap: 14px;
   justify-content: center;
 }
-button.attract-cta { font: inherit; cursor: pointer; }
+/* A <button> inherits a light background from the browser's own stylesheet,
+   which turned the primary call to action into a white pill on a dark
+   screen. These are outlined gold buttons, so the fill has to be cleared
+   explicitly. */
+button.attract-cta {
+  font: inherit;
+  font-size: 21px;
+  font-weight: 600;
+  background: transparent;
+  color: var(--gold-pale);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+button.attract-cta:active { transform: scale(0.97); }
 .attract-cta.secondary {
   background: transparent;
   color: rgba(221, 202, 147, 0.85);

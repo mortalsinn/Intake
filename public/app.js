@@ -131,14 +131,27 @@
         const waiting = loadQueue().length;
         const dead = loadDead().length;
 
-        // Staff-facing only. It used to sit over the Continue button while a
-        // customer was filling the form, telling them how many enquiries the
-        // booth had taken — their business, not his. It now appears solely on
-        // the welcome screen, which staff see between every visitor, so the
-        // warning value is kept without showing counts to the public.
+        // Two audiences, two amounts of detail.
+        //
+        // On the welcome screen, staff get the full picture — counts,
+        // warnings, whether Zoho is accepting leads.
+        //
+        // While a customer is filling the form they get CONNECTION only, no
+        // counts: how many enquiries the booth has taken is the shop's
+        // business, not theirs. It stays deliberately quiet when all is well
+        // and only speaks up when the booth has dropped offline — which
+        // changes nothing about safety, but is worth staff knowing.
         const onWelcome = !$('#attract')?.hidden;
-        pill.hidden = !onWelcome;
-        if (!onWelcome) return;
+        pill.hidden = false;
+
+        if (!onWelcome) {
+            const offline = !navigator.onLine || serverStatus === null;
+            pill.textContent = offline
+                ? 'Offline — saving on this device'
+                : 'Online';
+            pill.className = offline ? 'sync-pill dead' : 'sync-pill quiet';
+            return;
+        }
 
         // Worst news first — a booth glance must surface the real problem.
         if (dead) {
@@ -1071,7 +1084,8 @@
         flushQueue();
         setInterval(pollStatus, 60 * 1000);
         setInterval(flushQueue, 15 * 1000);
-        window.addEventListener('online', flushQueue);
+        window.addEventListener('online', () => { paintSyncPill(); flushQueue(); });
+        window.addEventListener('offline', paintSyncPill);
         // Keep-alive: free-tier hosts sleep after ~15 idle minutes, and a
         // cold start is a ~50s stare at a blank iPad for the next visitor.
         // A tiny ping while the kiosk is open keeps the booth warm.

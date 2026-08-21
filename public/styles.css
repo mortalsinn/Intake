@@ -1072,3 +1072,21 @@ input::placeholder, textarea::placeholder {
   color: var(--gold-pale);
   cursor: pointer;
 }
+
+/* "Online" is reassurance, not an announcement — nearly invisible until
+   something is wrong, at which point .dead makes it loud. */
+.sync-pill.quiet {
+  background: rgba(221, 202, 147, 0.10);
+  color: rgba(221, 202, 147, 0.55);
+  font-size: 12px;
+  padding: 5px 12px;
+}
+.sync-pill.quiet::before {
+  content: "";
+  display: inline-block;
+  width: 6px; height: 6px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: #6fbf73;
+  vertical-align: middle;
+}

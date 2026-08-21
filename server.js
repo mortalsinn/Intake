@@ -388,6 +388,42 @@ let pushingPhotos = false;
 
 // The gallery manifest, read once and cached — it only changes when someone
 // re-runs `npm run gallery`.
+/**
+ * Bytes for one inspiration photograph.
+ *
+ * The cached copy shipped with the app is the SOURCE OF TRUTH, not a
+ * fallback. Fetching the full-size original from ironwoodstairs.com looked
+ * fine in development and failed silently in production: the site's bot
+ * protection served this server a CAPTCHA page — HTML, 264 bytes, HTTP 200 —
+ * which was duly attached to leads as "Inspiration 1.jpg". Every inspiration
+ * attachment made from Render was a broken file.
+ *
+ * A larger original is still worth having when it can be had, so we try, but
+ * only accept it if it is genuinely a bigger image than the one we hold.
+ */
+async function inspirationBytes(photo) {
+    const local = fs.readFileSync(path.join(__dirname, 'public', photo.thumb));
+    try {
+        const res = await fetch(photo.full, {
+            // A plain fetch reads as a bot; this at least gets past the
+            // simpler challenges.
+            headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36' },
+            signal: AbortSignal.timeout(15000),
+        });
+        if (!res.ok) return local;
+        const buf = Buffer.from(await res.arrayBuffer());
+        const looksJpeg = buf.length > 20000 && buf[0] === 0xFF && buf[1] === 0xD8;
+        if (!looksJpeg) {
+            console.warn(`[gallery] ${photo.id}: website returned ${buf.length} bytes of non-image (bot challenge?) — using the cached copy`);
+            return local;
+        }
+        return buf.length > local.length ? buf : local;
+    } catch (err) {
+        console.warn(`[gallery] ${photo.id}: ${err.message} — using the cached copy`);
+        return local;
+    }
+}
+
 let galleryCache = null;
 function galleryPhoto(id) {
     if (!galleryCache) {
@@ -437,12 +473,7 @@ async function pushPhotos() {
                 const photo = galleryPhoto(picks[i]);
                 if (!photo) { store.markInspirationPushed(lead.id, picks[i]); continue; }
                 try {
-                    const src = await fetch(photo.full);
-                    // Fall back to the cached thumbnail if the website is
-                    // unreachable — a smaller picture beats none.
-                    const buffer = src.ok
-                        ? Buffer.from(await src.arrayBuffer())
-                        : fs.readFileSync(path.join(__dirname, 'public', photo.thumb));
+                    const buffer = await inspirationBytes(photo);
                     await zoho.createAttachment(cfg, lead.zoho.leadId, {
                         buffer, mimeType: 'image/jpeg',
                         // Numbered so the CRM lists them in the order chosen.

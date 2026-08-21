@@ -863,19 +863,36 @@
     // details on screen for the next person: after 90s of silence, wipe and
     // return to the welcome screen.
     let idleTimer = null;
+    const IDLE_MS = 3 * 60 * 1000;
+
+    /**
+     * Is the visitor busy looking at something, rather than gone?
+     *
+     * Someone studying the gallery, reading a photograph full screen, or
+     * still on the thank-you card is present — they simply are not touching
+     * the glass. Wiping their half-filled form out from under them because
+     * they spent two minutes choosing a railing is the single worst thing
+     * this kiosk could do, and it took no touching at all to trigger.
+     */
+    const visitorIsEngaged = () =>
+        !$('#gallery').hidden || !$('#lightbox').hidden
+        || !$('#thanks').hidden || !$('#staff-step').hidden;
+
     function armIdle() {
         clearTimeout(idleTimer);
         if (!attract.hidden) return;
         idleTimer = setTimeout(() => {
+            // Re-check at the moment it fires, not when it was armed.
+            if (visitorIsEngaged()) return armIdle();
             for (const k of Object.keys(state)) delete state[k];
             render();
             window.scrollTo(0, 0);
             $('#thanks').hidden = true;
             showAttract();
-        }, 90 * 1000);
+        }, IDLE_MS);
     }
-    for (const ev of ['pointerdown', 'input', 'touchstart']) {
-        document.addEventListener(ev, armIdle, { passive: true });
+    for (const ev of ['pointerdown', 'input', 'touchstart', 'scroll']) {
+        document.addEventListener(ev, armIdle, { passive: true, capture: true });
     }
 
     // ---------- boot ----------

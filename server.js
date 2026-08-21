@@ -40,7 +40,11 @@ const PIN_IS_WEAK = ADMIN_PIN.length < 6;
 
 // Guards. Windows are short; this is abuse control, not a firewall.
 const pinLock = lockout({ maxAttempts: 5, lockMs: 15 * 60 * 1000 });
-const limitLeads = rateLimiter({ windowMs: 60 * 1000, max: 20 });
+// Generous on purpose. Every iPad on the venue's wifi shares one public
+// address, and after a wifi outage a device flushes its whole backlog at
+// once — a tight limit would throttle the booth's own recovery. A scripted
+// flood is orders of magnitude above this.
+const limitLeads = rateLimiter({ windowMs: 60 * 1000, max: 60 });
 const limitPhotos = rateLimiter({ windowMs: 10 * 60 * 1000, max: 40 });
 const limitAdmin = rateLimiter({ windowMs: 60 * 1000, max: 60 });
 

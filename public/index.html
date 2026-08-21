@@ -28,6 +28,11 @@
         <button type="button" id="reset-btn" class="reset-btn">↺ Start over</button>
       </div>
       <form id="lead-form" autocomplete="off" novalidate></form>
+<div class="awards">
+        <img src="award-2025.png" alt="Consumer Choice Award 2025, Southern Alberta" />
+        <img src="award-2026.png" alt="Consumer Choice Award 2026, Southern Alberta" />
+        <span class="awards-note">Consumer Choice Award winner<br />2025 &amp; 2026, Southern Alberta</span>
+      </div>
       <div class="step-nav" id="step-nav">
         <button type="button" class="step-back" id="step-back">Back</button>
         <button type="button" class="submit" id="step-next">Continue</button>
@@ -46,6 +51,11 @@
       <img class="brand-stacked" src="logo-stacked.png" alt="Ironwood Stair &amp; Rail Inc." />
       <p class="attract-line" id="attract-line">EXPERIENCE THE IRONWOOD DIFFERENCE</p>
       <div class="attract-cta">Touch to begin</div>
+      <div class="awards">
+        <img src="award-2025.png" alt="Consumer Choice Award 2025, Southern Alberta" />
+        <img src="award-2026.png" alt="Consumer Choice Award 2026, Southern Alberta" />
+        <span class="awards-note">Consumer Choice Award winner<br />2025 &amp; 2026, Southern Alberta</span>
+      </div>
     </div>
     <svg class="attract-rail" viewBox="0 0 640 190" aria-hidden="true" preserveAspectRatio="xMidYMax meet">
       <!-- stylized descending stair with balusters and handrail -->
@@ -112,6 +122,18 @@
         <p class="lb-alt" id="lb-alt"></p>
         <button type="button" class="lb-pick" id="lb-pick">Select this photograph</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Idle check. The kiosk must clear an abandoned form for privacy, but it
+       must never wipe one out from under someone mid-conversation — so it
+       asks before it clears, rather than deciding on its own. -->
+  <div id="idle-check" class="idle-check" hidden>
+    <div class="idle-card">
+      <h2>Still with us?</h2>
+      <p>We'll clear this form for the next visitor in <b id="idle-count">30</b> seconds.</p>
+      <button type="button" class="submit" id="idle-keep">Keep my details — I'm still here</button>
+      <button type="button" class="staff-skip" id="idle-clear">Clear and start over</button>
     </div>
   </div>
 

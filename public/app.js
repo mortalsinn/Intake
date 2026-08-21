@@ -863,7 +863,11 @@
     // details on screen for the next person: after 90s of silence, wipe and
     // return to the welcome screen.
     let idleTimer = null;
-    const IDLE_MS = 3 * 60 * 1000;
+    // Long, because a staff member sitting with a customer and talking may
+    // not touch the screen for a while. Privacy still gets its way — but by
+    // asking first, not by deciding on its own.
+    const IDLE_MS = 5 * 60 * 1000;
+    const IDLE_GRACE_S = 30;
 
     /**
      * Is the visitor busy looking at something, rather than gone?
@@ -878,21 +882,74 @@
         !$('#gallery').hidden || !$('#lightbox').hidden
         || !$('#thanks').hidden || !$('#staff-step').hidden;
 
+    /** Has anyone actually typed anything worth protecting? */
+    const formHasAnswers = () => Object.values(state).some(v =>
+        Array.isArray(v) ? v.length > 0 : v === true || (v != null && String(v).trim() !== ''));
+
+    let graceTimer = null;
+
+    function wipeAndGoHome() {
+        clearTimeout(graceTimer);
+        $('#idle-check').hidden = true;
+        for (const k of Object.keys(state)) delete state[k];
+        render();
+        window.scrollTo(0, 0);
+        $('#thanks').hidden = true;
+        showAttract();
+    }
+
+    /**
+     * Ask before clearing.
+     *
+     * The old behaviour simply wiped the form, which is fine for a kiosk
+     * nobody is standing at and awful when a staff member is sitting beside
+     * a customer working through it — a pause in the conversation cost them
+     * everything typed so far. An empty form still resets silently: there is
+     * nothing to protect and nothing to interrupt.
+     */
+    function askBeforeClearing() {
+        if (!formHasAnswers()) return wipeAndGoHome();
+
+        const panel = $('#idle-check');
+        const countEl = $('#idle-count');
+        let left = IDLE_GRACE_S;
+        countEl.textContent = left;
+        panel.hidden = false;
+
+        clearTimeout(graceTimer);
+        const tick = () => {
+            left -= 1;
+            countEl.textContent = Math.max(0, left);
+            if (left <= 0) return wipeAndGoHome();
+            graceTimer = setTimeout(tick, 1000);
+        };
+        graceTimer = setTimeout(tick, 1000);
+    }
+
+    function keepGoing() {
+        clearTimeout(graceTimer);
+        $('#idle-check').hidden = true;
+        armIdle();
+    }
+
+    $('#idle-keep').addEventListener('click', keepGoing);
+    $('#idle-clear').addEventListener('click', wipeAndGoHome);
+
     function armIdle() {
         clearTimeout(idleTimer);
         if (!attract.hidden) return;
         idleTimer = setTimeout(() => {
             // Re-check at the moment it fires, not when it was armed.
             if (visitorIsEngaged()) return armIdle();
-            for (const k of Object.keys(state)) delete state[k];
-            render();
-            window.scrollTo(0, 0);
-            $('#thanks').hidden = true;
-            showAttract();
+            askBeforeClearing();
         }, IDLE_MS);
     }
     for (const ev of ['pointerdown', 'input', 'touchstart', 'scroll']) {
-        document.addEventListener(ev, armIdle, { passive: true, capture: true });
+        document.addEventListener(ev, () => {
+            // Any touch while the prompt is up answers it: they are here.
+            if (!$('#idle-check').hidden) return keepGoing();
+            armIdle();
+        }, { passive: true, capture: true });
     }
 
     // ---------- boot ----------

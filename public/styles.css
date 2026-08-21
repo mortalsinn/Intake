@@ -982,3 +982,61 @@ body.phone .submit { margin-top: 18px; min-height: 58px; font-size: 18px; }
   font-weight: 500;
   color: var(--gold-pale);
 }
+
+/* ---- Consumer Choice Award badges ---- */
+
+.awards {
+  flex: 1 1 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 26px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+.awards img { width: 62px; height: auto; display: block; }
+.awards-note {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+  letter-spacing: 0.02em;
+}
+
+/* On the dark attract screen the rule and text need the opposite treatment. */
+.attract .awards {
+  margin-top: clamp(40px, 7vh, 76px);
+  padding-top: 0;
+  border-top: none;
+  gap: 16px;
+}
+.attract .awards img { width: 74px; }
+.attract .awards-note { color: #b9c2c9; font-size: 13px; }
+
+/* The phone card is narrow; stack rather than crowd. */
+.phone .awards { margin-top: 22px; padding-top: 18px; }
+.phone .awards img { width: 54px; }
+.phone .awards-note { font-size: 12px; }
+
+/* ---- idle check: ask before clearing someone's work ---- */
+
+.idle-check {
+  position: fixed; inset: 0; z-index: 24;
+  background: rgba(20, 27, 34, 0.82);
+  display: grid; place-items: center;
+  animation: fadeIn 0.2s;
+}
+.idle-card {
+  background: var(--card);
+  border-top: 5px solid;
+  border-image: linear-gradient(90deg, #91772e, #f0ad4e, #91772e) 1;
+  border-radius: 20px;
+  padding: 36px 40px 26px;
+  text-align: center;
+  max-width: 520px;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.45);
+}
+.idle-card h2 { font-size: 26px; margin: 0 0 8px; }
+.idle-card p { color: var(--ink-soft); font-size: 17px; margin: 0 0 24px; }
+.idle-card p b { color: var(--ink); font-size: 20px; }
+.idle-card .submit { margin: 0; }

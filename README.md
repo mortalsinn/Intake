@@ -48,6 +48,12 @@ Leads scope.
    duration 10 minutes → **Create**.
 4. Paste the one-time code into the admin page within a few minutes.
 
+Every booth lead is assigned to one owner (`show.leadOwner` in
+config/form.json — currently Camille), so nothing sits in a queue nobody
+owns over a show weekend. To change owner, replace the `id` with another
+Zoho user's id; the name and email beside it are only there so the file
+reads clearly.
+
 Leads arrive with `Lead Source = Fall Home Show 2026`, standard fields mapped
 (name/phone/email/city), and a Description reading *"Captured at the
 &lt;show&gt; — &lt;when&gt;. Full details in Notes."* Everything from the booth —

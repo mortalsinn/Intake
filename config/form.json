@@ -10,7 +10,12 @@
     "subhead": "Share your details and a member of our team will follow up after the show.",
     "thanks": "Thank you",
     "thanksSub": "Your details have been received. A member of our team will be in touch shortly.",
-    "privacyUrl": "https://ironwoodstairs.com/about/privacy-policy/"
+    "privacyUrl": "https://ironwoodstairs.com/about/privacy-policy/",
+    "leadOwner": {
+      "id": "4797857000028057001",
+      "name": "Camille Manalili",
+      "email": "camille@ironwoodstairs.com"
+    }
   },
   "companyFallback": "Homeowner",
   "requirePhoneOrEmail": false,

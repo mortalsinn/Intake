@@ -965,3 +965,11 @@ body.phone .submit { margin-top: 18px; min-height: 58px; font-size: 18px; }
   color: var(--ink-soft);
   margin-top: 3px;
 }
+
+/* The tagline is set in capitals, so it needs letter-spacing to breathe
+   and a lighter weight to stay elegant rather than shouty. */
+.attract-line {
+  letter-spacing: 0.16em;
+  font-weight: 500;
+  color: var(--gold-pale);
+}

@@ -261,7 +261,21 @@
           <div class="err">This one's required.</div>`;
         const input = wrap.querySelector('input, textarea');
 
+        // A default that is right for nearly everyone saves a keystroke and
+        // still lets the odd out-of-province visitor change it.
+        if (field.default && !state[field.id]) {
+            input.value = field.default;
+            state[field.id] = field.default;
+        } else if (state[field.id]) {
+            input.value = state[field.id];   // survives a step change
+        }
+
         input.addEventListener('input', (e) => {
+            if (field.format === 'postal') {
+                let v = input.value;
+                if (e.inputType === 'deleteContentBackward' && /\s$/.test(v)) v = v.trim().slice(0, -1);
+                input.value = formatPostal(v);
+            }
             if (field.type === 'tel') {
                 // Backspacing over ")" or "-" must eat a digit, or the mask
                 // would instantly redraw the same string and trap the cursor.
@@ -326,6 +340,12 @@
         if (d.length <= 3) return pre + d;
         if (d.length <= 6) return `${pre}(${d.slice(0, 3)}) ${d.slice(3)}`;
         return `${pre}(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+    }
+
+    /** T2E 7Z8 — uppercase, single space, as they type. */
+    function formatPostal(raw) {
+        const c = String(raw).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+        return c.length > 3 ? `${c.slice(0, 3)} ${c.slice(3)}` : c;
     }
 
     // Uppercase the first letter of each word; never lowercase what's there,
@@ -443,6 +463,9 @@
         }
         if (field.type === 'email' && !/^\S+@\S+\.\S+$/.test(String(v).trim())) {
             return "That email address appears incomplete.";
+        }
+        if (field.format === 'postal' && !/^[A-Z]\d[A-Z] ?\d[A-Z]\d$/i.test(String(v).trim())) {
+            return 'That postal code looks incomplete — six characters, like T2E 7Z8.';
         }
         return null;
     }

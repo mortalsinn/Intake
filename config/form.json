@@ -167,10 +167,11 @@
           "label": "Glass",
           "options": [
             "Shower & bathroom glass",
-            "Glass railing",
-            "Mirror",
             "Interior glass & partition",
+            "Glass railing",
+            "Glass wall",
             "Glass door",
+            "Mirror",
             "Gym",
             "Wine room"
           ]

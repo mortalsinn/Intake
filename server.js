@@ -270,6 +270,76 @@ app.get('/api/admin/verify', requirePin, async (req, res) => {
     res.json({ connected: true, datacenter: cfg.datacenter, ...result });
 });
 
+/**
+ * Prove the whole chain, end to end, against Zoho itself.
+ *
+ * Everything else in this app reports what it BELIEVES happened. This asks
+ * the CRM what it actually holds and compares it to the append-only journal,
+ * which is the one file that is never rewritten. If those two agree, nothing
+ * has been lost — and that is a claim worth being able to make out loud
+ * rather than assume.
+ */
+app.get('/api/admin/audit', requirePin, async (req, res) => {
+    const cfg = store.getZoho();
+    const journalAudit = store.auditJournal();
+    const leads = store.getLeads();
+    const out = {
+        journal: {
+            recorded: journalAudit.journalled,
+            live: journalAudit.live,
+            // Anything the journal saw that the working file no longer has.
+            missingFromWorkingSet: journalAudit.missing.map(e => ({
+                id: e.id, name: [e.fields?.firstName, e.fields?.lastName].filter(Boolean).join(' '),
+                receivedAt: e.receivedAt,
+            })),
+        },
+        zoho: { checked: false },
+        photos: store.photoCounts(),
+    };
+
+    if (cfg) {
+        try {
+            const source = formConfig().show.leadSource;
+            const inCrm = await zoho.listLeadIdsBySource(cfg, source);
+            const claimed = leads.filter(l => l.zoho.status === 'synced' && l.zoho.leadId);
+            // A lead we believe we sent, that Zoho does not have. Deleted by
+            // hand, or never really landed — either way, worth knowing.
+            const vanished = claimed.filter(l => !inCrm.has(l.zoho.leadId));
+            out.zoho = {
+                checked: true,
+                source,
+                inCrmForThisShow: inCrm.size,
+                weBelieveSynced: claimed.length,
+                notYetSent: leads.filter(l => l.zoho.status !== 'synced').length,
+                missingFromCrm: vanished.map(l => ({
+                    id: l.id, leadId: l.zoho.leadId,
+                    name: [l.fields.firstName, l.fields.lastName].filter(Boolean).join(' '),
+                })),
+            };
+        } catch (err) {
+            out.zoho = { checked: false, error: err.message };
+        }
+    }
+
+    out.ok = out.journal.missingFromWorkingSet.length === 0
+        && (!out.zoho.checked || out.zoho.missingFromCrm.length === 0);
+    res.json(out);
+});
+
+/** Pull back anything the journal has that the working file lost. */
+app.post('/api/admin/restore', requirePin, (req, res) => {
+    const n = store.restoreFromJournal();
+    if (n) setImmediate(pushPending);
+    res.json({ ok: true, restored: n });
+});
+
+/** The raw append-only journal, for an off-site copy. */
+app.get('/api/admin/journal.jsonl', requirePin, (req, res) => {
+    res.setHeader('Content-Type', 'application/x-ndjson');
+    res.setHeader('Content-Disposition', 'attachment; filename="intake-journal.jsonl"');
+    res.send(store.getJournal().map(e => JSON.stringify(e)).join('\n'));
+});
+
 app.post('/api/admin/retry', requirePin, (req, res) => {
     // Clear the sticky flag: the admin is retrying because they believe they
     // fixed the token, and a stale banner would hide whether they did.

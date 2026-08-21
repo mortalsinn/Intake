@@ -11,6 +11,12 @@
 (() => {
     const QUEUE_KEY = 'iw_intake_queue_v1';
     const DEAD_KEY = 'iw_intake_dead_v1';
+    // Everything this iPad has ever captured, kept FOREVER — never cleared
+    // when a lead syncs. The queue only proves a lead left the device; if the
+    // server or its disk were ever lost, the queue would be empty and the
+    // leads gone with it. This is the copy that survives that.
+    const ARCHIVE_KEY = 'iw_intake_archive_v1';
+    const ARCHIVE_MAX = 2000;   // far beyond a show; guards the storage quota
 
     let config = null;
     const state = {}; // fieldId -> value
@@ -23,6 +29,47 @@
     const loadQueue = () => JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
     const saveQueue = (q) => localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
     const loadDead = () => JSON.parse(localStorage.getItem(DEAD_KEY) || '[]');
+    const loadArchive = () => JSON.parse(localStorage.getItem(ARCHIVE_KEY) || '[]');
+
+    /** Keep a permanent copy on the device. Never removed by syncing. */
+    function archive(record) {
+        try {
+            const all = loadArchive();
+            if (all.some(r => r.id === record.id)) return;
+            all.push({ ...record, archivedAt: new Date().toISOString() });
+            localStorage.setItem(ARCHIVE_KEY, JSON.stringify(all.slice(-ARCHIVE_MAX)));
+        } catch (err) {
+            // Storage full is survivable — the server copy is the primary —
+            // but staff should know this safety net has stopped working.
+            console.error('archive write failed', err);
+        }
+    }
+
+    /** The device's own copy, as a spreadsheet, with no network at all. */
+    function exportArchive() {
+        const rows = loadArchive();
+        if (!rows.length) return alert('Nothing captured on this device yet.');
+        const keys = [...new Set(rows.flatMap(r => Object.keys(r.fields || {})))]
+            .filter(k => !k.startsWith('_'));
+        const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+        const csv = [
+            ['capturedAt', ...keys, 'priority', 'inspiration'].map(esc).join(','),
+            ...rows.map(r => [
+                r.submittedAt,
+                ...keys.map(k => {
+                    const v = r.fields?.[k];
+                    return Array.isArray(v) ? v.join('; ') : v ?? '';
+                }),
+                r.fields?._boothRating || '',
+                (r.fields?._inspiration || []).join('; '),
+            ].map(esc).join(',')),
+        ].join('\r\n');
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+        a.download = `ironwood-intake-device-copy-${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+    }
 
     let syncing = false;
     async function flushQueue() {
@@ -442,6 +489,7 @@
         const queue = loadQueue();
         queue.push(record);
         saveQueue(queue);   // durable on the iPad before anything else happens
+        archive(record);    // and permanently, whatever happens to it later
 
         // Reset for the next visitor.
         for (const k of Object.keys(state)) delete state[k];
@@ -706,7 +754,17 @@
             if (btn) {
                 // Straight to the server: the lead has already been sent, so
                 // the priority catches up with it there, not in the queue.
-                fetch(`/api/leads/${encodeURIComponent(leadId)}/priority`, {
+                // Update the device's permanent copy as well, or its record of
+            // this enquiry would be missing the priority forever.
+            try {
+                const all = JSON.parse(localStorage.getItem(ARCHIVE_KEY) || '[]');
+                const row = all.find(r => r.id === leadId);
+                if (row) {
+                    row.fields = { ...row.fields, _boothRating: btn.dataset.rate };
+                    localStorage.setItem(ARCHIVE_KEY, JSON.stringify(all));
+                }
+            } catch { /* the server copy is primary */ }
+            fetch(`/api/leads/${encodeURIComponent(leadId)}/priority`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ priority: btn.dataset.rate }),

@@ -114,6 +114,46 @@
         if (id) api('/api/admin/retry', { method: 'POST', body: JSON.stringify({ id }) }).then(refresh);
     });
 
+    // The one button that checks all three layers agree with each other.
+    $('#btn-audit').addEventListener('click', async () => {
+        const msg = $('#verify-msg');
+        msg.className = 'msg';
+        msg.textContent = 'Checking device, server and Zoho…';
+        try {
+            const a = await (await api('/api/admin/audit')).json();
+            const lines = [];
+            lines.push(`Journal holds ${a.journal.recorded}, working file holds ${a.journal.live}.`);
+            if (a.journal.missingFromWorkingSet.length) {
+                lines.push(`⚠ ${a.journal.missingFromWorkingSet.length} in the journal are MISSING from the working file — press Restore.`);
+            }
+            if (a.zoho.checked) {
+                lines.push(`Zoho holds ${a.zoho.inCrmForThisShow} for "${a.zoho.source}". We believe ${a.zoho.weBelieveSynced} were sent; ${a.zoho.notYetSent} not sent yet.`);
+                if (a.zoho.missingFromCrm.length) {
+                    lines.push(`⚠ ${a.zoho.missingFromCrm.length} we sent are NOT in Zoho: ` +
+                        a.zoho.missingFromCrm.map(m => m.name || m.leadId).join(', '));
+                }
+            } else if (a.zoho.error) {
+                lines.push(`Could not check Zoho: ${a.zoho.error}`);
+            }
+            msg.className = `msg ${a.ok ? 'ok' : 'bad'}`;
+            msg.textContent = (a.ok ? '✓ Nothing lost. ' : '⚠ ') + lines.join(' ');
+        } catch {
+            msg.className = 'msg bad';
+            msg.textContent = 'Could not run the check.';
+        }
+        refresh();
+    });
+
+    $('#btn-journal').addEventListener('click', async () => {
+        const res = await api('/api/admin/journal.jsonl');
+        const blob = await res.blob();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'intake-journal.jsonl';
+        a.click();
+        URL.revokeObjectURL(a.href);
+    });
+
     $('#btn-export').addEventListener('click', async () => {
         const res = await api('/api/admin/export.csv');
         const blob = await res.blob();
@@ -149,6 +189,41 @@
         }
         refresh();
     });
+
+    // The kiosk and this page share an origin, so this page can read the
+    // iPad's own permanent archive directly. On any other machine it is
+    // simply empty, which is the honest answer.
+    const ARCHIVE_KEY = 'iw_intake_archive_v1';
+    function deviceRows() {
+        try { return JSON.parse(localStorage.getItem(ARCHIVE_KEY) || '[]'); } catch { return []; }
+    }
+    function paintDeviceCount() {
+        const n = deviceRows().length;
+        $('#device-count').textContent = n
+            ? `${n} captured on this device`
+            : 'None captured on this device';
+    }
+    $('#btn-device').addEventListener('click', () => {
+        const rows = deviceRows();
+        if (!rows.length) return alert('This device has not captured any enquiries.\n\nOpen this page on the booth iPad to download its copy.');
+        const keys = [...new Set(rows.flatMap(r => Object.keys(r.fields || {})))].filter(k => !k.startsWith('_'));
+        const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+        const csv = [
+            ['capturedAt', ...keys, 'priority', 'inspiration'].map(esc).join(','),
+            ...rows.map(r => [
+                r.submittedAt,
+                ...keys.map(k => { const v = r.fields?.[k]; return Array.isArray(v) ? v.join('; ') : v ?? ''; }),
+                r.fields?._boothRating || '',
+                (r.fields?._inspiration || []).join('; '),
+            ].map(esc).join(',')),
+        ].join('\r\n');
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+        a.download = `ironwood-device-copy-${new Date().toISOString().slice(0,10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+    });
+    paintDeviceCount();
 
     if (pin) refresh(); else $('#pin-gate').hidden = false;
     setInterval(() => { if (!$('#panel').hidden) refresh(); }, 10 * 1000);

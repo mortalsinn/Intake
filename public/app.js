@@ -251,8 +251,9 @@
         }
 
         const isArea = field.type === 'textarea';
+        const textHint = field.hint ? `<span class="field-hint">${field.hint}</span>` : '';
         wrap.innerHTML = `
-          <label class="title" for="f-${field.id}">${field.label}${field.required ? ' <span class="req">*</span>' : ''}</label>
+          <label class="title" for="f-${field.id}">${field.label}${field.required ? ' <span class="req">*</span>' : ''}${textHint}</label>
           ${isArea
             ? `<textarea id="f-${field.id}" placeholder="${field.placeholder || ''}"></textarea>`
             : `<input id="f-${field.id}" type="${field.type}" placeholder="${field.placeholder || ''}"

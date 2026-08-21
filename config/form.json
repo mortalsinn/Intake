@@ -76,10 +76,10 @@
       "label": "Street address",
       "crmLabel": "Street",
       "type": "text",
-      "required": true,
       "zoho": "Street",
       "autocapitalize": "words",
-      "placeholder": "123 Mayland Place NE"
+      "placeholder": "123 Mayland Place NE",
+      "hint": "Optional — helps us plan a site visit"
     },
     {
       "id": "city",
@@ -106,7 +106,6 @@
       "label": "Province",
       "crmLabel": "Province",
       "type": "text",
-      "required": true,
       "zoho": "State",
       "autocapitalize": "words",
       "half": true,
@@ -118,7 +117,6 @@
       "label": "Postal code",
       "crmLabel": "Postal code",
       "type": "text",
-      "required": true,
       "zoho": "Zip_Code",
       "half": true,
       "format": "postal",

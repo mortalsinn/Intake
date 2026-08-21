@@ -142,33 +142,35 @@
       "type": "multi",
       "groups": [
         {
-          "label": "Stairs & Railings",
+          "label": "Stair & Railing",
           "options": [
-            "Interior railing",
-            "Exterior railing",
-            "Stairs / treads",
-            "Deck or porch rail",
-            "Glass railing panels"
+            "Interior",
+            "Exterior",
+            "Railing",
+            "Stair",
+            "Material supply"
           ]
         },
         {
           "label": "Custom Metalwork",
           "options": [
             "Architectural metalwork",
-            "Gates & fences",
-            "Custom fabrication",
-            "Room dividers"
+            "Gate & fence",
+            "Baby gate / pet gate",
+            "Room divider",
+            "Custom fabrication"
           ]
         },
         {
           "label": "Glass",
           "options": [
             "Shower & bathroom glass",
-            "Mirrors",
-            "Interior glass & partitions",
-            "Glass doors",
-            "Gyms",
-            "Wine rooms"
+            "Glass railing",
+            "Mirror",
+            "Interior glass & partition",
+            "Glass door",
+            "Gym",
+            "Wine room"
           ]
         }
       ]

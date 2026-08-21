@@ -196,9 +196,22 @@
       ]
     },
     {
+      "id": "workingWith",
+      "section": "Your project",
+      "label": "Is anyone else involved in the project?",
+      "crmLabel": "Working with",
+      "type": "choice",
+      "options": [
+        "Just me",
+        "A designer",
+        "A contractor or builder",
+        "Both"
+      ]
+    },
+    {
       "id": "timeline",
       "section": "Your project",
-      "label": "What is your intended timeline?",
+      "label": "What is your ideal timeline?",
       "crmLabel": "Timeline",
       "type": "choice",
       "options": [

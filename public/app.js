@@ -130,7 +130,15 @@
         const pill = $('#sync-pill');
         const waiting = loadQueue().length;
         const dead = loadDead().length;
-        pill.hidden = false;
+
+        // Staff-facing only. It used to sit over the Continue button while a
+        // customer was filling the form, telling them how many enquiries the
+        // booth had taken — their business, not his. It now appears solely on
+        // the welcome screen, which staff see between every visitor, so the
+        // warning value is kept without showing counts to the public.
+        const onWelcome = !$('#attract')?.hidden;
+        pill.hidden = !onWelcome;
+        if (!onWelcome) return;
 
         // Worst news first — a booth glance must surface the real problem.
         if (dead) {
@@ -887,10 +895,12 @@
     function showAttract() {
         attract.hidden = false;
         clearTimeout(idleTimer);
+        paintSyncPill();
     }
 
     attract.addEventListener('click', () => {
         attract.hidden = true;
+        paintSyncPill();      // hides it the moment the form appears
         armIdle();
         // The tap is a user gesture, so iOS allows the keyboard: first field
         // ready the moment the visitor steps up.

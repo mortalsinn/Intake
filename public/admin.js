@@ -38,6 +38,7 @@
         const ph = s.photos || { pending: 0, uploaded: 0, failed: 0 };
         $('#c-photos').textContent = ph.uploaded + (ph.pending ? ` (+${ph.pending} pending)` : '')
             + (ph.failed ? ` (${ph.failed} failed)` : '');
+        $('#c-contest').textContent = s.contestCount ?? 0;
         $('#c-pending').textContent = s.counts.pending + (s.counts.failed ? ` (+${s.counts.failed} declined)` : '');
 
         const badge = $('#zoho-badge');
@@ -61,7 +62,7 @@
         }
         if (s.zoho.requiredScope) $('#scope-str').textContent = s.zoho.requiredScope;
 
-        $('#rows').innerHTML = s.leads.map(l => {
+        $('#rows').innerHTML = s.leads.filter(l => (l.kind || 'enquiry') !== 'contest').map(l => {
             const f = l.fields || {};
             const name = [f.firstName, f.lastName].filter(Boolean).join(' ') || '—';
             const contact = [f.phone, f.email].filter(Boolean).join(' · ') || '—';
@@ -184,6 +185,16 @@
             msg.textContent = 'Could not reach the server.';
         }
         refresh();
+    });
+
+    $('#btn-contest-csv').addEventListener('click', async () => {
+        const res = await api('/api/admin/export.csv?kind=contest');
+        const blob = await res.blob();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'prize-draw-entries.csv';
+        a.click();
+        URL.revokeObjectURL(a.href);
     });
 
     $('#btn-journal').addEventListener('click', async () => {

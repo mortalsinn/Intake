@@ -106,6 +106,28 @@ full-size image on the website — that is fetched only at the moment one is
 attached to a lead. Edit `config/gallery.json` to curate by hand; the order
 there is the order shown.
 
+## Prize draw
+
+The welcome screen offers two ways in: **Tell us about your project** and
+**Enter the draw**. Both run through the same pipeline — device copy,
+append-only journal, server disk — so a draw entry is as safe as an enquiry.
+
+They are kept apart everywhere it matters:
+
+- Draw entries are **never sent to Zoho**. Somebody entering a prize draw has
+  not asked for a quote, and mixing them into the show's leads would spoil
+  both lists. They are exported instead, from the admin page's **Prize draw**
+  card, as their own CSV with only the columns a draw needs.
+- The enquiry CSV, the enquiries table and the lead counts all exclude them.
+- Entering the draw asks for name, phone, email and city, requires accepting
+  the rules, and asks separately — optional — whether Ironwood may also
+  contact them about products and services.
+
+Edit [config/contest.json](config/contest.json) to change the questions or
+the wording; it uses the same format as form.json. If you later decide draw
+entrants who opted in SHOULD reach the CRM, that is a small change rather
+than a rebuild.
+
 ## Changing the form
 
 Everything the visitor sees lives in [config/form.json](config/form.json) —

@@ -19,6 +19,10 @@
     const ARCHIVE_MAX = 2000;   // far beyond a show; guards the storage quota
 
     let config = null;
+    // 'enquiry' (the project form) or 'contest' (the prize draw). Both use
+    // the same renderer, queue, archive and server pipeline; only the spec
+    // and where the entry is filed differ.
+    let kind = 'enquiry';
     const state = {}; // fieldId -> value
 
     const $ = (sel) => document.querySelector(sel);
@@ -528,6 +532,7 @@
 
         const record = {
             id: crypto.randomUUID(),
+            kind,
             submittedAt: new Date().toISOString(),
             fields: Object.fromEntries(Object.entries(state)
                 .map(([k, v]) => [k, typeof v === 'string' ? v.trim() : v])),
@@ -558,7 +563,10 @@
         //   QR  ->  Thank you  ->  staff priority  ->  welcome
         // The safety timeouts below exist only so an abandoned iPad returns
         // to the welcome screen; they are far longer than anyone needs.
-        showQrStep(record.id, name);
+        // A draw entry has no project photographs to send, so it goes
+        // straight to the thank you.
+        if (kind === 'contest') showThanksStep(record.id, name);
+        else showQrStep(record.id, name);
     });
 
     // ---------- inspiration gallery ----------
@@ -911,7 +919,16 @@
         paintSyncPill();
     }
 
-    attract.addEventListener('click', () => {
+    attract.addEventListener('click', async (e) => {
+        const chosen = e.target.closest('[data-kind]')?.dataset.kind;
+        // Switching forms reloads the spec and clears anything half-typed —
+        // a draw entry must never inherit answers from an abandoned enquiry.
+        if (chosen && chosen !== kind) {
+            kind = chosen;
+            for (const k of Object.keys(state)) delete state[k];
+            await loadConfig();
+            render();
+        }
         attract.hidden = true;
         paintSyncPill();      // hides it the moment the form appears
         armIdle();
@@ -1062,20 +1079,27 @@
 
     // ---------- boot ----------
 
-    async function boot() {
+    /** Fetch the spec for the current kind, falling back to a cached copy. */
+    async function loadConfig() {
         try {
-            const res = await fetch('/api/form');
+            const res = await fetch(`/api/form?kind=${encodeURIComponent(kind)}`);
             config = await res.json();
-            localStorage.setItem('iw_form_cache', JSON.stringify(config));
+            localStorage.setItem(`iw_form_cache_${kind}`, JSON.stringify(config));
+            return true;
         } catch {
             // Offline reload: fall back to the last form we saw so the booth
             // keeps taking names even with no server in sight.
-            const cached = localStorage.getItem('iw_form_cache');
-            if (!cached) {
-                document.body.innerHTML = '<p style="padding:40px;font-size:20px">Can\'t reach the intake server and no cached form yet — check the wifi and reload.</p>';
-                return;
-            }
+            const cached = localStorage.getItem(`iw_form_cache_${kind}`);
+            if (!cached) return false;
             config = JSON.parse(cached);
+            return true;
+        }
+    }
+
+    async function boot() {
+        if (!await loadConfig()) {
+            document.body.innerHTML = '<p style="padding:40px;font-size:20px">Can\'t reach the intake server and no cached form yet — check the wifi and reload.</p>';
+            return;
         }
         render();
         paintSyncPill();

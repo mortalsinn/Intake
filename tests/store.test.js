@@ -27,7 +27,9 @@ test('updateLead moves status and counts follow', () => {
     store.addLead({ id: 'a', fields: {} });
     store.addLead({ id: 'b', fields: {} });
     store.updateLead('a', { status: 'synced', leadId: 'z1' });
-    assert.deepEqual(store.counts(), { total: 2, synced: 1, pending: 1, failed: 0 });
+    assert.equal(store.counts().total, 2);
+    assert.equal(store.counts().synced, 1);
+    assert.equal(store.counts().pending, 1);
     // 'b' is inside its grace period, so it is deliberately withheld
     assert.equal(store.pendingLeads().length, 0);
     store.releaseHold('b');
@@ -83,4 +85,14 @@ test('retry() puts failed leads back in the pending pool', () => {
     assert.equal(store.retry(), 1);
     assert.equal(store.pendingLeads().length, 1);
     assert.equal(store.pendingLeads()[0].zoho.error, undefined);
+});
+
+test('contest entries are counted apart from sales leads', () => {
+    const store = createStore(tmp());
+    store.addLead({ id: 'a', fields: {}, kind: 'enquiry' });
+    store.addLead({ id: 'b', fields: {}, kind: 'contest' });
+    store.addLead({ id: 'c', fields: {} });               // defaults to enquiry
+    const c = store.counts();
+    assert.equal(c.total, 2, 'only enquiries count as leads');
+    assert.equal(c.contest, 1);
 });

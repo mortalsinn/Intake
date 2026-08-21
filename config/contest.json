@@ -1,0 +1,78 @@
+{
+  "show": {
+    "name": "Fall Home Show 2026",
+    "headline": "Enter the draw",
+    "subhead": "Leave your details for a chance to win. Takes ten seconds.",
+    "submitLabel": "Enter the draw",
+    "thanks": "You're entered",
+    "thanksSub": "Good luck! We'll contact the winner after the show.",
+    "timeZone": "America/Edmonton"
+  },
+  "kind": "contest",
+  "requirePhoneOrEmail": true,
+  "fields": [
+    {
+      "id": "firstName",
+      "section": "Enter the draw",
+      "label": "First name",
+      "crmLabel": "Name",
+      "type": "text",
+      "required": true,
+      "autocapitalize": "words",
+      "half": true
+    },
+    {
+      "id": "lastName",
+      "section": "Enter the draw",
+      "label": "Last name",
+      "crmLabel": "Surname",
+      "type": "text",
+      "required": true,
+      "autocapitalize": "words",
+      "half": true
+    },
+    {
+      "id": "phone",
+      "section": "Enter the draw",
+      "label": "Phone number",
+      "type": "tel",
+      "required": true,
+      "half": true,
+      "placeholder": "Enter your phone number"
+    },
+    {
+      "id": "email",
+      "section": "Enter the draw",
+      "label": "Email address",
+      "type": "email",
+      "required": true,
+      "half": true,
+      "placeholder": "Enter your email address"
+    },
+    {
+      "id": "city",
+      "section": "Enter the draw",
+      "label": "City or town",
+      "crmLabel": "City",
+      "type": "text",
+      "autocapitalize": "words",
+      "placeholder": "Enter your city or town",
+      "suggest": ["Calgary", "Airdrie", "Cochrane", "Okotoks", "Chestermere", "Strathmore"]
+    },
+    {
+      "id": "rules",
+      "section": "Enter the draw",
+      "label": "I have read and accept the contest rules, and confirm I am 18 or older.",
+      "type": "consent",
+      "required": true
+    },
+    {
+      "id": "consent",
+      "section": "Enter the draw",
+      "label": "Ironwood Stair & Rail Inc. may also contact me about their products, services and promotions.",
+      "hint": "Optional — you can still enter the draw either way",
+      "type": "consent"
+    }
+  ],
+  "consentFinePrint": "Ironwood Stair & Rail Inc., 108-239 Mayland Pl NE, Calgary, AB T2E 7Z8 · (403) 552-1007 · info@ironwoodstairs.com. You may withdraw your consent at any time by contacting us, or by using the unsubscribe link in any message we send. How we handle your information: ironwoodstairs.com/about/privacy-policy/"
+}

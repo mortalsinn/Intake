@@ -1090,3 +1090,19 @@ input::placeholder, textarea::placeholder {
   background: #6fbf73;
   vertical-align: middle;
 }
+
+/* Two ways in: the project enquiry, and the prize draw. */
+.attract-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: center;
+}
+button.attract-cta { font: inherit; cursor: pointer; }
+.attract-cta.secondary {
+  background: transparent;
+  color: rgba(221, 202, 147, 0.85);
+  border-color: rgba(221, 202, 147, 0.32);
+  font-weight: 500;
+  animation: none;           /* only the primary invitation should pulse */
+}

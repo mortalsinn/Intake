@@ -54,8 +54,13 @@ const limitAdmin = rateLimiter({ windowMs: 60 * 1000, max: 60 });
 const clientIp = (req) =>
     (req.get('x-forwarded-for') || '').split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
 
-const formConfigPath = path.join(__dirname, 'config', 'form.json');
-const formConfig = () => JSON.parse(fs.readFileSync(formConfigPath, 'utf8'));
+// Two forms share one pipeline: the enquiry form and the contest entry.
+// Same durability — device copy, journal, disk, CSV — with entries tagged so
+// a prize draw never lands in the middle of the show's sales leads.
+const CONFIGS = { enquiry: 'form.json', contest: 'contest.json' };
+const isKind = (k) => Object.prototype.hasOwnProperty.call(CONFIGS, k);
+const formConfig = (kind = 'enquiry') =>
+    JSON.parse(fs.readFileSync(path.join(__dirname, 'config', CONFIGS[isKind(kind) ? kind : 'enquiry']), 'utf8'));
 
 const app = express();
 // Scoped to /api on purpose. A global parser runs BEFORE the route-specific
@@ -78,7 +83,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/api/form', (req, res) => {
     try {
-        res.json(formConfig());
+        res.json(formConfig(req.query.kind));
     } catch (err) {
         res.status(500).json({ error: `config/form.json is invalid: ${err.message}` });
     }
@@ -121,9 +126,10 @@ app.post('/api/leads', (req, res) => {
     if (!limitLeads(clientIp(req)).allowed) {
         return res.status(429).json({ error: 'Too many submissions. Please wait a moment.' });
     }
+    const kind = isKind(req.body?.kind) ? req.body.kind : 'enquiry';
     let cfg;
     try {
-        cfg = formConfig();
+        cfg = formConfig(kind);
     } catch (err) {
         return res.status(500).json({ error: err.message });
     }
@@ -134,6 +140,7 @@ app.post('/api/leads', (req, res) => {
         id: req.body.id,
         submittedAt: req.body.submittedAt,
         fields: req.body.fields,
+        kind,
     });
     // The disk write above is the durable receipt — respond now, push later.
     // Retries from the iPad land here again with the same id and dedupe.
@@ -287,6 +294,7 @@ app.get('/api/admin/status', requirePin, (req, res) => {
         counts: store.counts(),
         photos: store.photoCounts(),
         leads: store.getLeads().slice().reverse(),
+        contestCount: store.getLeads().filter(l => l.kind === 'contest').length,
     });
 });
 
@@ -412,23 +420,36 @@ app.post('/api/admin/retry', requirePin, (req, res) => {
 });
 
 app.get('/api/admin/export.csv', requirePin, (req, res) => {
-    const cfg = formConfig();
+    // ?kind=contest exports the prize draw instead of the sales leads. Two
+    // separate lists, because they are two separate things: one gets called
+    // by an estimator, the other gets a name pulled out of a hat.
+    const kind = isKind(req.query.kind) ? req.query.kind : 'enquiry';
+    const cfg = formConfig(kind);
     const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    // boothRating is second, next to the name — it's the column you sort by
-    // on Monday morning, not something to hunt for at the far right.
-    const header = ['receivedAt', 'boothRating', ...cfg.fields.map(f => f.id), 'photos', 'zohoStatus', 'zohoLeadId', 'zohoError'];
-    const rows = store.getLeads().map(l => [
-        l.receivedAt,
-        l.fields._boothRating || '',
-        ...cfg.fields.map(f => {
-            const v = l.fields[f.id];
-            return Array.isArray(v) ? v.join('; ') : v ?? '';
-        }),
-        (l.photos || []).filter(p => p.status === 'uploaded').length,
-        l.zoho.status, l.zoho.leadId || '', l.zoho.error || '',
-    ]);
+    // A prize draw has no priority, no photographs and never goes to the CRM,
+    // so those columns would be dead weight in a list somebody is going to
+    // pull a winner out of.
+    const isContest = kind === 'contest';
+    const header = isContest
+        ? ['enteredAt', ...cfg.fields.map(f => f.id)]
+        : ['receivedAt', 'boothRating', ...cfg.fields.map(f => f.id), 'photos', 'zohoStatus', 'zohoLeadId', 'zohoError'];
+
+    const answers = (l) => cfg.fields.map(f => {
+        const v = l.fields[f.id];
+        return Array.isArray(v) ? v.join('; ') : v ?? '';
+    });
+
+    const rows = store.getLeads().filter(l => (l.kind || 'enquiry') === kind).map(l => isContest
+        ? [l.receivedAt, ...answers(l)]
+        : [
+            l.receivedAt,
+            l.fields._boothRating || '',
+            ...answers(l),
+            (l.photos || []).filter(p => p.status === 'uploaded').length,
+            l.zoho.status, l.zoho.leadId || '', l.zoho.error || '',
+        ]);
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename="homeshow-leads.csv"');
+    res.setHeader('Content-Disposition', `attachment; filename="${kind === 'contest' ? 'prize-draw-entries' : 'homeshow-leads'}.csv"`);
     res.send([header, ...rows].map(r => r.map(esc).join(',')).join('\r\n'));
 });
 
@@ -450,6 +471,13 @@ async function pushPending() {
     try {
         const formCfg = formConfig();
         for (const lead of store.pendingLeads()) {
+            // Prize-draw entries stay out of the CRM. They are exported as
+            // their own CSV instead — a draw entrant has not asked for a
+            // quote, and mixing them into the show's leads would spoil both.
+            if (lead.kind === 'contest') {
+                store.updateLead(lead.id, { status: 'local', syncedAt: null });
+                continue;
+            }
             // Backoff: skip a lead tried recently; the interval sweep returns.
             const wait = Math.min((lead.zoho.attempts || 0) * 2, 15) * 60 * 1000;
             if (lead.zoho.lastTriedAt && Date.now() - Date.parse(lead.zoho.lastTriedAt) < wait) continue;

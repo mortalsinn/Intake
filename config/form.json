@@ -45,7 +45,7 @@
       "required": true,
       "zoho": "Phone",
       "half": true,
-      "placeholder": "(403) 555-0123"
+      "placeholder": "Enter your phone number"
     },
     {
       "id": "email",
@@ -55,7 +55,7 @@
       "required": true,
       "zoho": "Email",
       "half": true,
-      "placeholder": "name@example.com"
+      "placeholder": "Enter your email address"
     },
     {
       "id": "contactPref",
@@ -78,7 +78,7 @@
       "type": "text",
       "zoho": "Street",
       "autocapitalize": "words",
-      "placeholder": "123 Mayland Place NE",
+      "placeholder": "Enter your street address",
       "hint": "Optional — helps us plan a site visit"
     },
     {
@@ -98,7 +98,8 @@
         "Okotoks",
         "Chestermere",
         "Strathmore"
-      ]
+      ],
+      "placeholder": "Enter your city or town"
     },
     {
       "id": "province",
@@ -120,7 +121,7 @@
       "zoho": "Zip_Code",
       "half": true,
       "format": "postal",
-      "placeholder": "T2E 7Z8"
+      "placeholder": "Enter your postal code"
     },
     {
       "id": "discuss",

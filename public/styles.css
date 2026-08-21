@@ -1050,3 +1050,11 @@ body.phone .submit { margin-top: 18px; min-height: 58px; font-size: 18px; }
 .idle-card p { color: var(--ink-soft); font-size: 17px; margin: 0 0 24px; }
 .idle-card p b { color: var(--ink); font-size: 20px; }
 .idle-card .submit { margin: 0; }
+
+/* Placeholders are prompts, not content — italic and light so nobody reads
+   them as a value already filled in. */
+input::placeholder, textarea::placeholder {
+  font-style: italic;
+  color: #a8a296;
+  opacity: 1;              /* Firefox dims placeholders by default */
+}

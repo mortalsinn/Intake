@@ -255,8 +255,9 @@
         wrap.innerHTML = `
           <label class="title" for="f-${field.id}">${field.label}${field.required ? ' <span class="req">*</span>' : ''}${textHint}</label>
           ${isArea
-            ? `<textarea id="f-${field.id}" placeholder="${field.placeholder || ''}"></textarea>`
+            ? `<textarea id="f-${field.id}" placeholder="${field.placeholder || ''}" autocomplete="off"></textarea>`
             : `<input id="f-${field.id}" type="${field.type}" placeholder="${field.placeholder || ''}"
+                 autocomplete="do-not-autofill-${field.id}" data-lpignore="true"
                  autocapitalize="${field.autocapitalize || 'off'}" autocorrect="off" spellcheck="false"
                  ${field.type === 'email' ? 'inputmode="email"' : ''} ${field.type === 'tel' ? 'inputmode="tel" maxlength="16"' : ''} />`}
           <div class="err">This one's required.</div>`;

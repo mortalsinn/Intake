@@ -124,7 +124,10 @@ Environment variables (Render wipes the disk on every deploy, so the Zoho
 connection must come from env — copy the values out of `data/zoho.json` on
 the machine where you connected):
 
-- `ADMIN_PIN` — strong, this admin page is on the public internet
+- `ADMIN_PIN` — **must be set.** Left unset, the server invents a random PIN
+  at every boot, so the one in your logs stops working the moment it
+  restarts. Six digits or more; this page shows customer contact details.
+  Five wrong attempts locks that address out for fifteen minutes.
 - `ZOHO_CLIENT_ID`, `ZOHO_CLIENT_SECRET`, `ZOHO_REFRESH_TOKEN`
 - `ZOHO_DC` — `com` (or your datacenter)
 

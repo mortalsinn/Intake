@@ -19,6 +19,7 @@ const express = require('express');
 const QRCode = require('qrcode');
 
 const { createStore } = require('./lib/store');
+const { safeEqual, rateLimiter, lockout } = require('./lib/guard');
 const { validateLead } = require('./lib/validate');
 const zoho = require('./lib/zoho');
 
@@ -26,10 +27,28 @@ const PORT = Number(process.env.PORT) || 3100;
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const store = createStore(DATA_DIR);
 
-// Admin PIN: set ADMIN_PIN in the environment to keep it stable; otherwise a
-// random one is generated and printed at boot. Never a shipped default —
-// the admin page shows customer PII.
+// Admin PIN. Never a shipped default — this page shows customer names,
+// telephone numbers and email addresses.
+//
+// An unset PIN generates a random one, which is fine on a laptop and awful
+// on a hosted server: it changes on every restart, so the value in the logs
+// and the value that works drift apart and nobody can get in. Hosted
+// deployments must set it, and are told so loudly.
+const PIN_WAS_GENERATED = !process.env.ADMIN_PIN;
 const ADMIN_PIN = process.env.ADMIN_PIN || String(crypto.randomInt(100000, 999999));
+const PIN_IS_WEAK = ADMIN_PIN.length < 6;
+
+// Guards. Windows are short; this is abuse control, not a firewall.
+const pinLock = lockout({ maxAttempts: 5, lockMs: 15 * 60 * 1000 });
+const limitLeads = rateLimiter({ windowMs: 60 * 1000, max: 20 });
+const limitPhotos = rateLimiter({ windowMs: 10 * 60 * 1000, max: 40 });
+const limitAdmin = rateLimiter({ windowMs: 60 * 1000, max: 60 });
+
+// Behind Render's proxy the real client is in x-forwarded-for; without this
+// every visitor looks like the same address and one busy iPad would rate
+// limit the whole booth.
+const clientIp = (req) =>
+    (req.get('x-forwarded-for') || '').split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
 
 const formConfigPath = path.join(__dirname, 'config', 'form.json');
 const formConfig = () => JSON.parse(fs.readFileSync(formConfigPath, 'utf8'));
@@ -39,6 +58,15 @@ const app = express();
 // one, so a global 100kb cap silently rejected every photograph upload with
 // 413 no matter what limit the upload route asked for. Form posts stay
 // small and capped; the photo route sets its own limit below.
+// Modest, boring headers. No framing, no MIME sniffing, no referrer leakage
+// of upload tokens to third parties.
+app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    next();
+});
+
 app.use('/api', express.json({ limit: '100kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -84,6 +112,11 @@ app.get('/api/gallery', (req, res) => {
 });
 
 app.post('/api/leads', (req, res) => {
+    // The kiosk submits one enquiry a minute at most; anything above this is
+    // somebody with the URL, not a visitor.
+    if (!limitLeads(clientIp(req)).allowed) {
+        return res.status(429).json({ error: 'Too many submissions. Please wait a moment.' });
+    }
     let cfg;
     try {
         cfg = formConfig();
@@ -170,6 +203,9 @@ app.get('/u/:token/info', (req, res) => {
 const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
 
 app.post('/u/:token/photos', express.json({ limit: '24mb' }), (req, res) => {
+    if (!limitPhotos(req.params.token).allowed) {
+        return res.status(429).json({ error: 'Too many uploads for this enquiry. Please wait a few minutes.' });
+    }
     const lead = store.leadByUploadToken(req.params.token);
     if (!lead) return res.status(404).json({ error: 'This link has expired.' });
 
@@ -208,8 +244,27 @@ app.post('/u/:token/photos', express.json({ limit: '24mb' }), (req, res) => {
 // ---------- admin ----------
 
 function requirePin(req, res, next) {
-    if (req.get('x-admin-pin') === ADMIN_PIN) return next();
-    res.status(401).json({ error: 'Wrong PIN' });
+    const ip = clientIp(req);
+    if (!limitAdmin(ip).allowed) {
+        return res.status(429).json({ error: 'Too many requests. Wait a moment.' });
+    }
+    const locked = pinLock.blocked(ip);
+    if (locked) {
+        return res.status(429).json({
+            error: `Too many incorrect PINs. Locked for ${Math.ceil(locked / 60)} more minute(s).`,
+        });
+    }
+    if (safeEqual(req.get('x-admin-pin'), ADMIN_PIN)) {
+        pinLock.succeed(ip);
+        return next();
+    }
+    const lockedFor = pinLock.fail(ip);
+    console.warn(`[admin] wrong PIN from ${ip}${lockedFor ? ` — locked out for ${Math.ceil(lockedFor / 60)}m` : ''}`);
+    res.status(401).json({
+        error: lockedFor
+            ? `Too many incorrect PINs. Locked for ${Math.ceil(lockedFor / 60)} minute(s).`
+            : 'Incorrect PIN.',
+    });
 }
 
 app.get('/api/admin/status', requirePin, (req, res) => {
@@ -594,7 +649,19 @@ if (require.main === module) {
         console.log(`  Kiosk (open this on the iPad): ${nets[0] || `http://localhost:${PORT}`}`);
         for (const url of nets.slice(1)) console.log(`                            or: ${url}`);
         console.log(`  Admin: ${nets[0] || `http://localhost:${PORT}`}/admin.html`);
-        console.log(`  Admin PIN: ${ADMIN_PIN}${process.env.ADMIN_PIN ? '' : '  (random this boot — set ADMIN_PIN in .env to fix it)'}`);
+        console.log(`  Admin PIN: ${ADMIN_PIN}`);
+        if (PIN_WAS_GENERATED) {
+            console.warn('');
+            console.warn('  ****************************************************************');
+            console.warn('  *  ADMIN_PIN is NOT set, so the PIN above was invented and     *');
+            console.warn('  *  CHANGES EVERY RESTART. On a hosted server that means the    *');
+            console.warn('  *  PIN in your logs stops working the moment it restarts.      *');
+            console.warn('  *  Set ADMIN_PIN in the environment.                           *');
+            console.warn('  ****************************************************************');
+            console.warn('');
+        } else if (PIN_IS_WEAK) {
+            console.warn('  NOTE: that PIN is short. This page shows customer contact details.');
+        }
         pushPending();
     });
 }

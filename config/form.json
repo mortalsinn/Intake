@@ -155,10 +155,11 @@
           "label": "Custom Metalwork",
           "options": [
             "Architectural metalwork",
+            "Custom fabrication",
             "Gate & fence",
-            "Baby gate / pet gate",
             "Room divider",
-            "Custom fabrication"
+            "Baby gate",
+            "Pet gate"
           ]
         },
         {
@@ -186,13 +187,12 @@
     {
       "id": "projectType",
       "section": "Your project",
-      "label": "Is this for an existing home or a new build?",
+      "label": "Is this a renovation or a new build?",
       "crmLabel": "Project",
       "type": "choice",
       "options": [
-        "Existing home",
-        "New build",
-        "Undecided"
+        "Renovation",
+        "New build"
       ]
     },
     {
@@ -202,7 +202,6 @@
       "crmLabel": "Timeline",
       "type": "choice",
       "options": [
-        "As soon as possible",
         "Within 1–3 months",
         "Within 3–6 months",
         "Researching options"
@@ -224,10 +223,10 @@
     {
       "id": "notes",
       "section": "Additional information",
-      "label": "Additional details",
+      "label": "Anything else we should know?",
       "crmLabel": "Notes",
       "type": "textarea",
-      "placeholder": "Existing railing, approximate measurements, photographs — anything that helps us prepare."
+      "placeholder": "Questions, ideas, or anything about your project you would like us to know."
     },
     {
       "id": "consent",

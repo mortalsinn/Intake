@@ -62,7 +62,7 @@ test('the note carries every answer, in labelled sections', () => {
     assert.match(c, /ADDITIONAL DETAILS/);
     assert.match(c, /oak to iron, has photos/);
     assert.match(c, /CONSENT/);
-    assert.match(c, /Given .*Agreed to:/s);
+    assert.match(c, /Marketing consent GIVEN.*Agreed to:/s);
 });
 
 test('note omits sections that have no answers — no empty headings', () => {
@@ -74,7 +74,7 @@ test('note omits sections that have no answers — no empty headings', () => {
 
 test('refused consent is stated loudly in the note', () => {
     const note = buildNote(lead({ lastName: 'W', phone: '1', consent: false }), formConfig);
-    assert.match(note.Note_Content, /CONSENT NOT GIVEN — do not contact/);
+    assert.match(note.Note_Content, /Marketing consent NOT given/);
 });
 
 test('withDetail is the no-notes-scope fallback: nothing is dropped', () => {
@@ -116,4 +116,21 @@ test('datacenter normalizes and points at zohoapis, not accounts', () => {
     assert.equal(normalizeDatacenter('ca'), 'ca');
     assert.equal(normalizeDatacenter('nope'), 'com');
     assert.equal(apiBase('ca'), 'https://www.zohoapis.ca/crm/v7');
+});
+
+test('no consent still produces a lead — and flags the opt-out', () => {
+    const r = buildLeadRecord(lead({ lastName: 'Woo', phone: '1', consent: false }), formConfig);
+    assert.equal(r.Last_Name, 'Woo', 'the lead is still built');
+    assert.equal(r.Email_Opt_Out, true, 'Zoho is told not to mass-email them');
+});
+
+test('consent given leaves the opt-out flag alone', () => {
+    const r = buildLeadRecord(lead({ lastName: 'Woo', phone: '1', consent: true }), formConfig);
+    assert.equal('Email_Opt_Out' in r, false);
+});
+
+test('the note distinguishes answering an enquiry from marketing', () => {
+    const c = buildNote(lead({ lastName: 'W', phone: '1', consent: false }), formConfig).Note_Content;
+    assert.match(c, /Reply to THIS enquiry as normal/);
+    assert.match(c, /Do NOT add them to mailouts/);
 });

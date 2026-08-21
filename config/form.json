@@ -253,7 +253,7 @@
       "section": "Additional information",
       "label": "I agree that Ironwood Stair & Rail Inc. may contact me about my enquiry by phone, text or email, and may send me occasional information about their products, services and promotions.",
       "type": "consent",
-      "required": true
+      "hint": "Optional — we can still answer your enquiry either way"
     }
   ],
   "company": {

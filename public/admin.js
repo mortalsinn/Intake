@@ -90,7 +90,24 @@
         await refresh();
     });
 
-    $('#btn-retry').addEventListener('click', () => api('/api/admin/retry', { method: 'POST', body: '{}' }).then(refresh));
+    $('#btn-retry').addEventListener('click', async () => {
+        const msg = $('#verify-msg');
+        msg.className = 'msg';
+        msg.textContent = 'Retrying…';
+        try {
+            const r = await (await api('/api/admin/retry', { method: 'POST', body: '{}' })).json();
+            msg.className = 'msg ok';
+            // Nothing to retry is the NORMAL case, and saying so is the whole
+            // point — a button that does nothing visible reads as broken.
+            msg.textContent = r.retried
+                ? `Re-queued ${r.retried} item(s). They will transfer within a minute.`
+                : 'Nothing waiting — everything has already transferred.';
+        } catch {
+            msg.className = 'msg bad';
+            msg.textContent = 'Could not reach the server.';
+        }
+        refresh();
+    });
 
     $('#btn-verify').addEventListener('click', async () => {
         const msg = $('#verify-msg');
@@ -122,24 +139,49 @@
         try {
             const a = await (await api('/api/admin/audit')).json();
             const lines = [];
-            lines.push(`Journal holds ${a.journal.recorded}, working file holds ${a.journal.live}.`);
-            if (a.journal.missingFromWorkingSet.length) {
-                lines.push(`⚠ ${a.journal.missingFromWorkingSet.length} in the journal are MISSING from the working file — press Restore.`);
+            const lost = a.journal.missingFromWorkingSet.length;
+            if (lost) {
+                lines.push(`⚠ ${lost} enquiry(ies) are in the backup but missing from the server's working file. Press "Restore from backup".`);
+            } else if (a.journal.recorded < a.journal.live) {
+                // The backup only knows what arrived after it was switched on.
+                lines.push(`Backup is protecting ${a.journal.recorded} of ${a.journal.live} enquiries — the rest were captured before the backup existed, so they are not counted here. Nothing is missing.`);
+            } else {
+                lines.push(`Backup and server agree: ${a.journal.live} enquiries, none missing.`);
             }
             if (a.zoho.checked) {
-                lines.push(`Zoho holds ${a.zoho.inCrmForThisShow} for "${a.zoho.source}". We believe ${a.zoho.weBelieveSynced} were sent; ${a.zoho.notYetSent} not sent yet.`);
+                lines.push(`Zoho currently holds ${a.zoho.inCrmForThisShow} for "${a.zoho.source}".`);
+                if (a.zoho.notYetSent) lines.push(`${a.zoho.notYetSent} still to transfer.`);
                 if (a.zoho.missingFromCrm.length) {
-                    lines.push(`⚠ ${a.zoho.missingFromCrm.length} we sent are NOT in Zoho: ` +
-                        a.zoho.missingFromCrm.map(m => m.name || m.leadId).join(', '));
+                    lines.push(`${a.zoho.missingFromCrm.length} enquiry(ies) were sent to Zoho and are no longer there — deleted from the CRM, or never landed: ` +
+                        a.zoho.missingFromCrm.map(m => m.name || m.leadId).join(', ') + '.');
                 }
             } else if (a.zoho.error) {
                 lines.push(`Could not check Zoho: ${a.zoho.error}`);
             }
-            msg.className = `msg ${a.ok ? 'ok' : 'bad'}`;
-            msg.textContent = (a.ok ? '✓ Nothing lost. ' : '⚠ ') + lines.join(' ');
+            // Only a genuine gap between backup and server is an alarm. A lead
+            // deleted from the CRM by hand is information, not a failure.
+            msg.className = `msg ${lost ? 'bad' : 'ok'}`;
+            msg.textContent = (lost ? '⚠ ' : '✓ ') + lines.join(' ');
         } catch {
             msg.className = 'msg bad';
             msg.textContent = 'Could not run the check.';
+        }
+        refresh();
+    });
+
+    $('#btn-restore').addEventListener('click', async () => {
+        const msg = $('#verify-msg');
+        msg.className = 'msg';
+        msg.textContent = 'Restoring…';
+        try {
+            const r = await (await api('/api/admin/restore', { method: 'POST', body: '{}' })).json();
+            msg.className = 'msg ok';
+            msg.textContent = r.restored
+                ? `Restored ${r.restored} enquiry(ies) from the backup. They will transfer to Zoho shortly.`
+                : 'Nothing to restore — the server already has everything the backup holds.';
+        } catch {
+            msg.className = 'msg bad';
+            msg.textContent = 'Could not reach the server.';
         }
         refresh();
     });

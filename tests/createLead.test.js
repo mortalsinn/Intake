@@ -61,6 +61,30 @@ test('it retries once, never in a loop', async () => {
     );
 });
 
+test('attachment filenames are made safe — a space survives into the stored file', () => {
+    assert.equal(zoho.safeFilename('Inspiration 1.jpg'), 'Inspiration-1.jpg');
+    assert.equal(zoho.safeFilename('my photo (1).JPG'), 'my-photo-1.jpg');
+    assert.equal(zoho.safeFilename('staircase.jpg'), 'staircase.jpg');
+    assert.equal(zoho.safeFilename(''), 'photo.jpg');
+    assert.equal(zoho.safeFilename(null), 'photo.jpg');
+});
+
+test('non-image bytes are never attached', async () => {
+    zoho._resetTokenCache();
+    const cfg = { clientId: 'c', clientSecret: 's', refreshToken: 'r', datacenter: 'com' };
+    // An error page served with a 200 would otherwise land in the CRM as a
+    // file that exists and will not open.
+    const html = Buffer.from('<!DOCTYPE html><html><body>Not found</body></html>'.repeat(40));
+    await assert.rejects(
+        () => zoho.createAttachment(cfg, 'LEAD1', { buffer: html, filename: 'Inspiration 1.jpg' }),
+        (e) => e.permanent === true && /not image data/.test(e.message),
+    );
+    await assert.rejects(
+        () => zoho.createAttachment(cfg, 'LEAD1', { buffer: Buffer.alloc(0), filename: 'x.jpg' }),
+        (e) => e.permanent === true && /Refusing to attach 0 bytes/.test(e.message),
+    );
+});
+
 test('a real data error still surfaces — only picklists are droppable', async () => {
     zoho._resetTokenCache();
     stubFetch([{

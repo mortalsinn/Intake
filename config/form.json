@@ -84,7 +84,7 @@
       "zoho": "Street",
       "autocapitalize": "words",
       "placeholder": "Enter your street address",
-      "hint": "Optional — helps us plan a site visit"
+      "hint": "Optional — kept on file with your project"
     },
     {
       "id": "city",

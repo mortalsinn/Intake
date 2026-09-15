@@ -1,5 +1,8 @@
 // Staff admin: live sync status, Zoho connect, CSV export, retry.
 (() => {
+    // One iPad, two companies. The table is shared so nobody has to remember
+    // to check a second screen; this is the column that keeps them apart.
+    const BRAND_LABEL = { enquiry: 'Ironwood', ribit: 'Code Compass' };
     const $ = (sel) => document.querySelector(sel);
     let pin = sessionStorage.getItem('iw_admin_pin') || '';
 
@@ -61,6 +64,8 @@
             badge.textContent = `Connected — zoho.${s.zoho.datacenter}`;
         }
         if (s.zoho.requiredScope) $('#scope-str').textContent = s.zoho.requiredScope;
+        const ribit = $('#c-ribit');
+        if (ribit) ribit.textContent = s.counts?.byKind?.ribit?.total ?? 0;
 
         $('#rows').innerHTML = s.leads.filter(l => (l.kind || 'enquiry') !== 'contest').map(l => {
             const f = l.fields || {};
@@ -76,12 +81,13 @@
             const rating = (f._boothRating || '').replace(/\s*—.*$/, '');
             return `<tr>
               <td>${new Date(l.receivedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+              <td>${BRAND_LABEL[l.kind || 'enquiry'] || (l.kind || 'enquiry')}</td>
               <td>${rating}</td>
               <td>${name}</td><td>${contact}</td><td>${interests}</td>
               <td>${photoCell(l)}</td>
               <td><span class="badge ${badgeCls}" title="${z.error || ''}">${zText}</span></td>
               <td>${retry}</td></tr>`;
-        }).join('') || '<tr><td colspan="8" style="color:#888">No enquiries recorded yet.</td></tr>';
+        }).join('') || '<tr><td colspan="9" style="color:#888">No enquiries recorded yet.</td></tr>';
         return true;
     }
 
@@ -185,6 +191,16 @@
             msg.textContent = 'Could not reach the server.';
         }
         refresh();
+    });
+
+    $('#btn-ribit-csv').addEventListener('click', async () => {
+        const res = await api('/api/admin/export.csv?kind=ribit');
+        const blob = await res.blob();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'code-compass-demo-requests.csv';
+        a.click();
+        URL.revokeObjectURL(a.href);
     });
 
     $('#btn-contest-csv').addEventListener('click', async () => {

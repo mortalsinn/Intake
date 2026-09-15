@@ -1,8 +1,54 @@
-# Ironwood Stair & Rail — Fall Home Show 2026 Intake
+# Fall Home Show 2026 Intake — Ironwood & Code Compass
 
 An iPad kiosk that captures visitor info at a home show and feeds it into
 Zoho CRM as Leads. Built for home-show reality: the wifi can drop, Zoho can
 be down, the server can restart — **no lead is ever lost**.
+
+## Two companies, one iPad
+
+There are only so many iPads at the show, so one app serves both booths:
+**Ironwood Stair & Rail** and **Code Compass by Ribit**. The kiosk opens on a
+chooser, and picking a brand swaps the theme, the attract screen and the form
+spec together.
+
+It is a chooser screen, not a mode toggle. A visitor must never be able to
+half-fill an Ironwood railing enquiry and have it submitted as a Ribit demo
+request, so choosing a brand always clears the form, and every "next visitor"
+moment — a submit, a timeout, Start over — returns to the chooser rather than
+to one company's welcome screen.
+
+Under the hood a brand is just another **kind**, the same mechanism the prize
+draw already used, which is why it inherits the whole safety pipeline for
+free: device queue, append-only journal, server disk, dedupe, CSV, backoff.
+
+| | Ironwood | Code Compass |
+|---|---|---|
+| Spec | [config/form.json](config/form.json) | [config/ribit-form.json](config/ribit-form.json) |
+| `kind` | `enquiry` (+ `contest` for the draw) | `ribit` |
+| Lead Source | `Fall Home Show 2026` | `Fall Home Show 2026 - Code Compass` |
+| Goes to Zoho | yes | yes |
+| Inspiration gallery | yes | no — it is scraped from ironwoodstairs.com |
+| Awards, stair graphic | yes | no |
+
+[config/brands.json](config/brands.json) is the chooser itself — logos,
+taglines, and which form each button opens. A third booth is a JSON edit plus
+one entry in `CONFIGS` in [server.js](server.js).
+
+### Before a new brand or show goes live
+
+**Add its Lead Source to the Zoho picklist first.** Zoho *silently accepts* a
+`Lead_Source` it does not know: it stores the value, returns success, and then
+no list view filtered on source will ever show those leads. There is no error
+to catch. The CRM UI has no visible button for this, so:
+
+```bash
+node scripts/add-lead-source.js "Fall Home Show 2026 - Code Compass"
+```
+
+Code Compass leads are deliberately left **unassigned** — `show.leadOwner` is
+absent from `ribit-form.json`, so they land on whoever owns the connected
+token. Ironwood's booth leads go to one named owner. Set a `leadOwner` for
+Ribit too if it should not simply follow the token.
 
 ## How leads survive
 

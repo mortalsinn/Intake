@@ -1,0 +1,236 @@
+{
+  "show": {
+    "name": "Fall Home Show 2026",
+    "leadSource": "Fall Home Show 2026 - Code Compass",
+    "submitLabel": "Request my demo",
+    "timeZone": "America/Edmonton",
+    "headline": "Let's book your demo",
+    "attractLine": "ASK THE BUILDING CODE A PLAIN QUESTION",
+    "subhead": "A few details and we'll set up a twenty minute walkthrough on your own projects.",
+    "thanks": "Demo requested",
+    "thanksSub": "Thank you. We'll be in touch to arrange a time that suits you.",
+    "enquiryLabel": "DEMO REQUEST",
+    "noteTitle": "Code Compass demo request",
+    "appName": "Ribit intake application",
+    "detailLabel": "WHAT THEY NEED"
+  },
+  "kind": "ribit",
+  "companyFallback": "Independent",
+  "requirePhoneOrEmail": false,
+  "photos": false,
+  "fields": [
+    {
+      "id": "firstName",
+      "section": "Your details",
+      "label": "First name",
+      "crmLabel": "Name",
+      "type": "text",
+      "required": true,
+      "zoho": "First_Name",
+      "autocapitalize": "words",
+      "half": true
+    },
+    {
+      "id": "lastName",
+      "section": "Your details",
+      "label": "Last name",
+      "crmLabel": "Surname",
+      "type": "text",
+      "required": true,
+      "zoho": "Last_Name",
+      "autocapitalize": "words",
+      "half": true
+    },
+    {
+      "id": "phone",
+      "section": "Your details",
+      "label": "Phone number",
+      "type": "tel",
+      "required": true,
+      "zoho": "Phone",
+      "half": true,
+      "placeholder": "Enter your phone number"
+    },
+    {
+      "id": "email",
+      "section": "Your details",
+      "label": "Email address",
+      "type": "email",
+      "required": true,
+      "zoho": "Email",
+      "half": true,
+      "placeholder": "Enter your email address"
+    },
+    {
+      "id": "company",
+      "section": "Your details",
+      "label": "Company",
+      "crmLabel": "Company",
+      "type": "text",
+      "zoho": "Company",
+      "autocapitalize": "words",
+      "placeholder": "Enter your company name",
+      "hint": "Optional — leave blank if you work for yourself"
+    },
+    {
+      "id": "contactPref",
+      "section": "Your details",
+      "label": "Preferred method of contact",
+      "crmLabel": "Prefers",
+      "type": "multi",
+      "required": true,
+      "options": ["Phone call", "Email"],
+      "hint": "Choose either or both"
+    },
+    {
+      "id": "city",
+      "section": "Your details",
+      "label": "City or town",
+      "crmLabel": "City",
+      "type": "text",
+      "required": true,
+      "zoho": "City",
+      "autocapitalize": "words",
+      "half": true,
+      "suggest": ["Calgary", "Airdrie", "Cochrane", "Okotoks", "Chestermere", "Strathmore", "Edmonton", "Red Deer", "Lethbridge"],
+      "placeholder": "Enter your city or town"
+    },
+    {
+      "id": "province",
+      "section": "Your details",
+      "label": "Province",
+      "crmLabel": "Province",
+      "type": "text",
+      "zoho": "State",
+      "autocapitalize": "words",
+      "half": true,
+      "default": "Alberta"
+    },
+    {
+      "id": "role",
+      "section": "Your work",
+      "label": "What best describes your work?",
+      "crmLabel": "Role",
+      "type": "choice",
+      "required": true,
+      "options": [
+        "Builder or general contractor",
+        "Trade contractor",
+        "Renovator",
+        "Designer or architect",
+        "Inspector or plans examiner",
+        "Homeowner",
+        "Other"
+      ]
+    },
+    {
+      "id": "trades",
+      "section": "Your work",
+      "label": "Which work do you deal with the code on?",
+      "crmLabel": "Code areas",
+      "type": "multi",
+      "groups": [
+        {
+          "label": "Structure & envelope",
+          "options": ["Framing", "Foundations", "Roofing", "Windows & doors", "Insulation & vapour"]
+        },
+        {
+          "label": "Life safety",
+          "options": ["Stairs & guards", "Egress & exiting", "Fire separations", "Smoke & CO alarms", "Barrier-free"]
+        },
+        {
+          "label": "Systems",
+          "options": ["Plumbing", "Electrical", "HVAC & ventilation", "Energy code"]
+        }
+      ],
+      "hint": "Pick as many as apply — this tunes the demo to your work"
+    },
+    {
+      "id": "jurisdictions",
+      "section": "Your work",
+      "label": "Which codes do you work under?",
+      "crmLabel": "Jurisdictions",
+      "type": "multi",
+      "options": ["Alberta", "British Columbia", "Ontario", "Quebec", "Saskatchewan", "Manitoba", "Atlantic Canada", "National (NBC)"],
+      "hint": "Alberta is loaded in full today — tell us which you need next"
+    },
+    {
+      "id": "teamSize",
+      "section": "Your work",
+      "label": "How many people would use it?",
+      "crmLabel": "Team size",
+      "type": "choice",
+      "options": ["Just me", "2 – 5", "6 – 20", "21 – 50", "More than 50"]
+    },
+    {
+      "id": "lookupToday",
+      "section": "Your work",
+      "label": "How do you look up the code today?",
+      "crmLabel": "Looks it up by",
+      "type": "multi",
+      "options": [
+        "Paper code book",
+        "PDF search",
+        "Calling the building department",
+        "Asking a colleague",
+        "Guessing and correcting later",
+        "Another software tool"
+      ]
+    },
+    {
+      "id": "interests",
+      "section": "What you need",
+      "label": "Which parts of Ribit interest you?",
+      "crmLabel": "Interested in",
+      "type": "multi",
+      "groups": [
+        {
+          "label": "Code Compass",
+          "options": ["Plain-question code search", "Cited answers", "Multi-province codes", "STANDATA variations"]
+        },
+        {
+          "label": "The wider platform",
+          "options": ["Estimating & quoting", "Site photo inspection", "Tender & bid review", "Project tracking"]
+        }
+      ]
+    },
+    {
+      "id": "painPoint",
+      "section": "What you need",
+      "label": "What does a code question cost you today?",
+      "crmLabel": "Biggest problem",
+      "type": "textarea",
+      "placeholder": "The last time you had to stop and look something up — what happened, and how long did it take?"
+    },
+    {
+      "id": "timeline",
+      "section": "What you need",
+      "label": "When would you want to start?",
+      "crmLabel": "Timeline",
+      "type": "choice",
+      "options": ["Straight away", "Within 1-3 months", "Within 3-6 months", "Just researching"]
+    },
+    {
+      "id": "notes",
+      "section": "Additional information",
+      "label": "Anything else we should know?",
+      "crmLabel": "Notes",
+      "type": "textarea",
+      "placeholder": "Questions about the product, your setup, or what you would need to see before committing."
+    },
+    {
+      "id": "consent",
+      "section": "Additional information",
+      "label": "I agree that Ribit may contact me about my demo request by phone, text or email, and may send me occasional information about their products and services.",
+      "type": "consent",
+      "hint": "Optional — we can still arrange your demo either way"
+    }
+  ],
+  "company": {
+    "name": "Ribit",
+    "address": "108-239 Mayland Pl NE, Calgary, AB T2E 7Z8",
+    "phone": "(403) 552-1007",
+    "email": "hello@ribitos.com"
+  },
+  "consentFinePrint": "Ribit, 108-239 Mayland Pl NE, Calgary, AB T2E 7Z8 · (403) 552-1007. You may withdraw your consent at any time by contacting us, or by using the unsubscribe link in any message we send."
+}

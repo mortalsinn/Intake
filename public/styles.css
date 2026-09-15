@@ -113,7 +113,7 @@ body::before {
     0 1px 0 rgba(255,255,255,0.06) inset,
     0 18px 50px rgba(0, 0, 0, 0.45);
   border-top: 5px solid;
-  border-image: linear-gradient(90deg, #91772e, #f0ad4e, #91772e) 1;
+  border-image: linear-gradient(90deg, var(--bronze), var(--amber), var(--bronze)) 1;
 }
 
 .card-head {
@@ -467,7 +467,7 @@ button.submit::after {
 .thanks-card {
   background: var(--card);
   border-top: 5px solid;
-  border-image: linear-gradient(90deg, #91772e, #f0ad4e, #91772e) 1;
+  border-image: linear-gradient(90deg, var(--bronze), var(--amber), var(--bronze)) 1;
   border-radius: 22px;
   padding: 48px 56px;
   text-align: center;
@@ -599,7 +599,7 @@ body.phone .wordmark small { font-size: 9px; }
   border-radius: 20px;
   padding: 26px 22px 22px;
   border-top: 4px solid;
-  border-image: linear-gradient(90deg, #91772e, #f0ad4e, #91772e) 1;
+  border-image: linear-gradient(90deg, var(--bronze), var(--amber), var(--bronze)) 1;
   box-shadow: 0 16px 44px rgba(0,0,0,0.4);
 }
 .phone-card h1 { font-size: 23px; margin: 0 0 10px; line-height: 1.25; }
@@ -1039,7 +1039,7 @@ body.phone .submit { margin-top: 18px; min-height: 58px; font-size: 18px; }
 .idle-card {
   background: var(--card);
   border-top: 5px solid;
-  border-image: linear-gradient(90deg, #91772e, #f0ad4e, #91772e) 1;
+  border-image: linear-gradient(90deg, var(--bronze), var(--amber), var(--bronze)) 1;
   border-radius: 20px;
   padding: 36px 40px 26px;
   text-align: center;
@@ -1119,4 +1119,171 @@ button.attract-cta:active { transform: scale(0.97); }
   border-color: rgba(221, 202, 147, 0.32);
   font-weight: 500;
   animation: none;           /* only the primary invitation should pulse */
+}
+
+/* ==========================================================
+   Two brands on one iPad
+   ==========================================================
+   The kiosk serves Ironwood's booth and Code Compass by Ribit at the same
+   show. Both read their colour from the same tokens, so a brand is a token
+   swap on <html data-brand> and not a second stylesheet — and the chooser
+   can show a card in each brand's own colours at once via data-theme.
+
+   Ribit's green is #189C3C, sampled off the frog artwork rather than guessed
+   off a Tailwind class, and Inter is its face: Cinzel and gold belong to
+   Ironwood's classical wordmark, and a software product wearing them reads
+   as the wrong company. */
+
+[data-brand="ribit"],
+[data-theme="ribit"] {
+  --bronze: #189C3C;
+  --bronze-deep: #12782E;
+  --amber: #2ED760;
+  --gold-pale: #8FE9A8;
+  --navy: #0d1411;
+  --night: #070b09;
+  --ink: #10161b;
+  --ink-soft: #5a6470;
+  --paper: #f4f7f5;
+  --line: #dfe6e1;
+  --gold-grad: linear-gradient(105deg, #8FE9A8 0%, #2ED760 42%, #189C3C 100%);
+}
+[data-brand="ribit"] body,
+[data-brand="ribit"] .attract {
+  font-family: Inter, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+/* Ironwood's iron scrollwork is its own motif; the platform gets a blueprint
+   dot field instead, the same one the ribitos.com hero uses. */
+[data-brand="ribit"] body::before {
+  opacity: 0.16;
+  background:
+    url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><circle cx="2" cy="2" r="1.4" fill="%23189C3C"/></svg>') repeat;
+}
+[data-brand="ribit"] .attract-cta { animation-name: breathe-green; }
+@keyframes breathe-green {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(46, 215, 96, 0.35); }
+  50%      { transform: scale(1.04); box-shadow: 0 0 0 16px rgba(46, 215, 96, 0); }
+}
+/* The Ribit lockup is a wide frog-and-wordmark, not Ironwood's tall stack,
+   so it needs width rather than height or it sits tiny on the screen. */
+[data-brand="ribit"] .brand-stacked { width: min(78vw, 460px); height: auto; max-height: none; }
+[data-brand="ribit"] .brand-wide { width: min(58vw, 300px); height: auto; }
+
+/* ---- the chooser: whose booth are you standing at? ---- */
+
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  color: #fff;
+  background: radial-gradient(1200px 700px at 50% -10%, #26323d 0%, #161e26 55%, #0b1116 100%) #0b1116;
+  animation: fadeIn 0.4s;
+}
+.splash-inner {
+  width: 100%;
+  max-width: 900px;
+  padding: clamp(28px, 6vh, 64px) 24px;
+  text-align: center;
+}
+.splash-headline {
+  margin: 0;
+  font-size: clamp(30px, 5.4vw, 46px);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.splash-sub {
+  margin: 12px auto clamp(26px, 5vh, 44px);
+  max-width: 44ch;
+  font-size: clamp(17px, 2.4vw, 21px);
+  color: #b9c2c9;
+}
+/* One column on a phone, two side by side from tablet up — which is the
+   iPad the booth actually runs on. */
+.splash-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 1fr;
+  text-align: left;
+}
+@media (min-width: 720px) {
+  .splash-grid { grid-template-columns: 1fr 1fr; }
+}
+.splash-card {
+  /* A card is the touch target, not a button inside it: the whole panel is
+     tappable, which is the only size that works with a finger in a crowd. */
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 300px;
+  padding: 28px 26px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-top: 4px solid var(--bronze);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.045);
+  color: #fff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.16s, background 0.16s, border-color 0.16s;
+}
+.splash-card:active {
+  transform: scale(0.985);
+  background: rgba(255, 255, 255, 0.09);
+  border-color: var(--bronze);
+}
+.splash-logo {
+  /* Height-driven, so two lockups of different proportions sit on the same
+     optical line instead of one dwarfing the other. */
+  height: 72px;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: left center;
+  align-self: flex-start;
+}
+.splash-tag {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--gold-pale);
+  line-height: 1.35;
+}
+.splash-blurb {
+  margin: 0;
+  flex: 1;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #c3ccd4;
+}
+.splash-go {
+  align-self: flex-start;
+  padding: 14px 34px;
+  border: 2px solid var(--bronze);
+  border-radius: 999px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--gold-pale);
+}
+.splash-foot {
+  margin: clamp(24px, 4vh, 38px) auto 0;
+  max-width: 52ch;
+  font-size: 14px;
+  color: #8e99a3;
+}
+
+/* The way back to the other company, from a brand's own attract screen. */
+.attract-switch {
+  display: block;
+  margin: clamp(30px, 6vh, 56px) auto 0;
+  padding: 12px 26px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  background: transparent;
+  color: #b9c2c9;
+  font: inherit;
+  font-size: 16px;
+  cursor: pointer;
 }

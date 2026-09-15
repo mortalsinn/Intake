@@ -1,9 +1,12 @@
 // Service worker: cache the app shell so the kiosk loads even when the wifi
 // is down. API calls are never cached here — the app has its own queue and
 // form-config fallback in localStorage, which handle offline properly.
-const CACHE = 'iw-intake-v53';
+const CACHE = 'iw-intake-v54';
 const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'manifest.webmanifest',
                'logo-mark.png', 'logo-stacked.png',
+               // Ribit's lockup is shell, not content: the chooser shows both
+               // companies and must still show both with the wifi down.
+               'ribit-logo.png', 'ribit-frog.png',
                'award-2025.png', 'award-2026.png'];
 
 self.addEventListener('install', (e) => {

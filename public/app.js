@@ -19,10 +19,15 @@
     const ARCHIVE_MAX = 2000;   // far beyond a show; guards the storage quota
 
     let config = null;
-    // 'enquiry' (the project form) or 'contest' (the prize draw). Both use
-    // the same renderer, queue, archive and server pipeline; only the spec
-    // and where the entry is filed differ.
+    // 'enquiry' (the project form), 'contest' (the prize draw) or 'ribit'
+    // (a Code Compass demo request). All use the same renderer, queue,
+    // archive and server pipeline; only the spec and where the entry is
+    // filed differ.
     let kind = 'enquiry';
+    // The two companies sharing this iPad. Loaded from /api/brands; a kiosk
+    // with no brands.json simply runs single-brand exactly as before.
+    let brands = null;
+    let brand = null;
     const state = {}; // fieldId -> value
 
     const $ = (sel) => document.querySelector(sel);
@@ -70,7 +75,7 @@
         ].join('\r\n');
         const a = document.createElement('a');
         a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-        a.download = `ironwood-intake-device-copy-${new Date().toISOString().slice(0, 10)}.csv`;
+        a.download = `intake-device-copy-${new Date().toISOString().slice(0, 10)}.csv`;
         a.click();
         URL.revokeObjectURL(a.href);
     }
@@ -145,7 +150,7 @@
         // business, not theirs. It stays deliberately quiet when all is well
         // and only speaks up when the booth has dropped offline — which
         // changes nothing about safety, but is worth staff knowing.
-        const onWelcome = !$('#attract')?.hidden;
+        const onWelcome = !$('#attract')?.hidden || !$('#splash')?.hidden;
         pill.hidden = false;
 
         if (!onWelcome) {
@@ -380,7 +385,7 @@
     const capWords = (s) => s.replace(/(^|[\s\-'])(\p{Ll})/gu, (m, p, c) => p + c.toUpperCase());
 
     function render() {
-        document.title = `${config.show.name} — Ironwood Stair & Rail`;
+        document.title = `${config.show.name} — ${brand?.name || config.company?.name || 'Ironwood Stair & Rail'}`;
         $('#headline').textContent = config.show.headline || 'Tell us about your project';
         $('#subhead').textContent = config.show.subhead || '';
         $('#thanks-headline').textContent = config.show.thanks || 'Thanks!';
@@ -789,7 +794,7 @@
             panel.onclick = null;
             panel.hidden = true;
             clearQr();
-            showAttract();   // nobody there; do not leave a QR on screen
+            showSplash();   // nobody there; do not leave a QR on screen
         }, QR_BAIL_MS);
 
         panel.onclick = done;
@@ -810,7 +815,7 @@
             clearTimeout(bail);
             panel.onclick = null;
             panel.hidden = true;
-            showAttract();   // nobody tapped, so nobody is holding it
+            showSplash();   // nobody tapped, so nobody is holding it
         }, THANKS_BAIL_MS);
         panel.onclick = done;
         panel.hidden = false;
@@ -828,7 +833,7 @@
      */
     function askPriority(leadId, who) {
         const step = $('#staff-step');
-        if (!step) { showAttract(); return; }
+        if (!step) { showSplash(); return; }
         $('#staff-who').textContent = who
             ? `How should ${who} be followed up?`
             : 'How should this enquiry be followed up?';
@@ -837,7 +842,7 @@
             clearTimeout(bail);
             step.onclick = null;
             step.hidden = true;
-            showAttract();
+            showSplash();
         };
         // If staff walk off mid-prompt, do not strand the booth on an
         // internal screen — fall back to the welcome.
@@ -909,17 +914,151 @@
         if (frame) frame.innerHTML = '';
     }
 
+    // ---------- brands ----------
+
+    async function loadBrands() {
+        try {
+            const res = await fetch('/api/brands');
+            if (!res.ok) throw new Error('none');
+            brands = await res.json();
+            localStorage.setItem('iw_brands_cache', JSON.stringify(brands));
+        } catch {
+            // Same rule as the form spec: a booth with no server still opens.
+            const cached = localStorage.getItem('iw_brands_cache');
+            brands = cached ? JSON.parse(cached) : null;
+        }
+        const list = brands?.brands || [];
+        return list.length > 1 ? list : null;
+    }
+
+    const brandById = (id) => (brands?.brands || []).find(b => b.id === id) || null;
+
+    /** Paint the chooser from config, so adding a third booth is a JSON edit. */
+    function paintSplash() {
+        const sp = brands?.splash || {};
+        $('#splash-headline').textContent = sp.headline || 'Welcome';
+        $('#splash-sub').textContent = sp.subhead || '';
+        $('#splash-foot').textContent = sp.footNote || '';
+        const grid = $('#splash-grid');
+        grid.innerHTML = '';
+        for (const b of brands.brands) {
+            const card = document.createElement('button');
+            card.type = 'button';
+            card.className = 'splash-card';
+            card.dataset.chooseBrand = b.id;
+            // Theme the card with its OWN brand, not the one currently
+            // loaded — the chooser has to show both companies at once.
+            card.dataset.theme = b.id;
+            const logo = document.createElement('img');
+            logo.src = b.cardLogo || b.logo;
+            logo.alt = b.logoAlt || b.name;
+            logo.className = 'splash-logo';
+            const tag = document.createElement('p');
+            tag.className = 'splash-tag';
+            tag.textContent = b.tagline || '';
+            const blurb = document.createElement('p');
+            blurb.className = 'splash-blurb';
+            blurb.textContent = b.blurb || '';
+            const go = document.createElement('span');
+            go.className = 'splash-go';
+            go.textContent = 'Choose';
+            card.append(logo, tag, blurb, go);
+            grid.appendChild(card);
+        }
+    }
+
+    /**
+     * Switch the whole kiosk to a brand: its theme, its attract screen, its
+     * form spec. Always clears half-typed answers — carrying an Ironwood
+     * address into a Ribit demo request is exactly the mix-up the separate
+     * chooser screen exists to prevent.
+     */
+    async function useBrand(id) {
+        brand = brandById(id) || brand;
+        if (!brand) return;
+        document.documentElement.dataset.brand = brand.id;
+        for (const k of Object.keys(state)) delete state[k];
+        kind = brand.ctas?.[0]?.kind || 'enquiry';
+        await loadConfig();
+        paintBrandChrome();
+        render();
+    }
+
+    /** Everything on the attract screen and masthead that a brand owns. */
+    function paintBrandChrome() {
+        if (!brand) return;
+        const logo = $('#attract-logo');
+        if (logo) { logo.src = brand.logo; logo.alt = brand.logoAlt || brand.name; }
+        const wide = $('#brand-wide');
+        if (wide) { wide.src = brand.logo; wide.alt = brand.logoAlt || brand.name; }
+        // Awards and the stair illustration are Ironwood's, not the platform's.
+        for (const el of document.querySelectorAll('[data-awards]')) el.hidden = !brand.awards;
+        // setAttribute, NOT .hidden. The stair is an <svg>, and SVGElement
+        // does not reflect the hidden IDL property to the content attribute
+        // the way HTMLElement does — `rail.hidden = true` sets a plain JS
+        // property, the attribute never appears, and the CSS rule that hides
+        // it never matches. It stayed on screen behind the Ribit branding.
+        const rail = $('#attract-rail');
+        if (rail) {
+            if (brand.rail) rail.removeAttribute('hidden');
+            else rail.setAttribute('hidden', '');
+        }
+
+        const choices = $('#attract-choices');
+        if (choices) {
+            choices.innerHTML = '';
+            for (const cta of brand.ctas || []) {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = `attract-cta${cta.secondary ? ' secondary' : ''}`;
+                b.dataset.kind = cta.kind;
+                b.textContent = cta.label;
+                choices.appendChild(b);
+            }
+        }
+        const sw = $('#attract-switch');
+        if (sw) {
+            const other = (brands?.brands || []).filter(b => b.id !== brand.id);
+            sw.hidden = !other.length;
+            sw.textContent = other.length === 1
+                ? `Here for ${other[0].name} instead?`
+                : 'Here for something else?';
+        }
+    }
+
     // ---------- attract screen + idle reset ----------
 
     const attract = $('#attract');
+    const splash = $('#splash');
+
+    /** Back to the chooser: a fresh visitor, either company, nothing carried. */
+    function showSplash() {
+        if (!splash || !brands?.brands?.length) return showAttract();
+        for (const k of Object.keys(state)) delete state[k];
+        clearTimeout(idleTimer);
+        attract.hidden = true;
+        splash.hidden = false;
+        paintSyncPill();
+    }
+
+    splash?.addEventListener('click', async (e) => {
+        const id = e.target.closest('[data-choose-brand]')?.dataset.chooseBrand;
+        if (!id) return;
+        await useBrand(id);
+        splash.hidden = true;
+        showAttract();
+    });
 
     function showAttract() {
+        if (splash) splash.hidden = true;
         attract.hidden = false;
         clearTimeout(idleTimer);
         paintSyncPill();
     }
 
     attract.addEventListener('click', async (e) => {
+        // The way back to the other company, before any form is touched.
+        if (e.target.closest('#attract-switch')) return showSplash();
         const chosen = e.target.closest('[data-kind]')?.dataset.kind;
         // Switching forms reloads the spec and clears anything half-typed —
         // a draw entry must never inherit answers from an abandoned enquiry.
@@ -951,7 +1090,7 @@
         render();
         window.scrollTo(0, 0);
         $('#thanks').hidden = true;
-        showAttract();
+        showSplash();
     }
 
     const resetBtn = $('#reset-btn');
@@ -1011,7 +1150,7 @@
         render();
         window.scrollTo(0, 0);
         $('#thanks').hidden = true;
-        showAttract();
+        showSplash();
     }
 
     /**
@@ -1062,7 +1201,7 @@
 
     function armIdle() {
         clearTimeout(idleTimer);
-        if (!attract.hidden) return;
+        if (!attract.hidden || !$('#splash')?.hidden) return;
         idleTimer = setTimeout(() => {
             // Re-check at the moment it fires, not when it was armed.
             if (visitorIsEngaged()) return armIdle();
@@ -1097,6 +1236,21 @@
     }
 
     async function boot() {
+        const multi = await loadBrands();
+        if (multi) {
+            // Default to the first brand so the form, theme and cached spec
+            // are all coherent before anybody taps anything.
+            await useBrand((brands.brands[0] || {}).id);
+            if (!config) {
+                document.body.innerHTML = '<p style="padding:40px;font-size:20px">Can\'t reach the intake server and no cached form yet — check the wifi and reload.</p>';
+                return;
+            }
+            paintSplash();
+            paintSyncPill();
+            showSplash();
+            startLoops();
+            return;
+        }
         if (!await loadConfig()) {
             document.body.innerHTML = '<p style="padding:40px;font-size:20px">Can\'t reach the intake server and no cached form yet — check the wifi and reload.</p>';
             return;
@@ -1104,6 +1258,11 @@
         render();
         paintSyncPill();
         showAttract();
+        startLoops();
+    }
+
+    /** The background work: sync, status, keep-alive. Same for both brands. */
+    function startLoops() {
         pollStatus();
         flushQueue();
         setInterval(pollStatus, 60 * 1000);

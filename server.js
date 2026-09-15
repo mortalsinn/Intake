@@ -57,7 +57,15 @@ const clientIp = (req) =>
 // Two forms share one pipeline: the enquiry form and the contest entry.
 // Same durability — device copy, journal, disk, CSV — with entries tagged so
 // a prize draw never lands in the middle of the show's sales leads.
-const CONFIGS = { enquiry: 'form.json', contest: 'contest.json' };
+// Two brands share one iPad: Ironwood's booth and Code Compass by Ribit.
+// A brand is not a mode switch — each has its own spec, its own Lead_Source
+// and its own owner, so a Ribit demo request can never be filed as an
+// Ironwood railing enquiry. 'kind' already threads through the store, the
+// CSV export and the Zoho push, so a brand is one more kind.
+const CONFIGS = { enquiry: 'form.json', contest: 'contest.json', ribit: 'ribit-form.json' };
+// Which kinds the CRM should receive. A prize draw entrant has not asked for
+// anything; everyone else has.
+const CRM_KINDS = new Set(['enquiry', 'ribit']);
 const isKind = (k) => Object.prototype.hasOwnProperty.call(CONFIGS, k);
 const formConfig = (kind = 'enquiry') =>
     JSON.parse(fs.readFileSync(path.join(__dirname, 'config', CONFIGS[isKind(kind) ? kind : 'enquiry']), 'utf8'));
@@ -80,6 +88,15 @@ app.use('/api', express.json({ limit: '100kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ---------- kiosk ----------
+
+/** The brand chooser the kiosk opens on. Absent file = single-brand kiosk. */
+app.get('/api/brands', (req, res) => {
+    try {
+        res.json(JSON.parse(fs.readFileSync(path.join(__dirname, 'config', 'brands.json'), 'utf8')));
+    } catch {
+        res.status(404).json({ error: 'No brands configured.' });
+    }
+});
 
 app.get('/api/form', (req, res) => {
     try {
@@ -366,8 +383,14 @@ app.get('/api/admin/audit', requirePin, async (req, res) => {
 
     if (cfg) {
         try {
-            const source = formConfig().show.leadSource;
-            const inCrm = await zoho.listLeadIdsBySource(cfg, source);
+            // Every CRM-bound brand's Lead_Source, not just the first. With
+            // one source, every OTHER brand's synced leads would be reported
+            // as missing from the CRM — a false alarm on every sweep.
+            const sources = [...new Set([...CRM_KINDS].map((k) => {
+                try { return formConfig(k).show.leadSource; } catch { return null; }
+            }).filter(Boolean))];
+            const found = await Promise.all(sources.map(src => zoho.listLeadIdsBySource(cfg, src)));
+            const inCrm = new Set(found.flatMap(set => [...set]));
             const claimed = leads.filter(l => l.zoho.status === 'synced' && l.zoho.leadId);
             // A lead we believe we sent, that Zoho does not have. Deleted by
             // hand, or never really landed — either way, worth knowing.
@@ -449,7 +472,7 @@ app.get('/api/admin/export.csv', requirePin, (req, res) => {
             l.zoho.status, l.zoho.leadId || '', l.zoho.error || '',
         ]);
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="${kind === 'contest' ? 'prize-draw-entries' : 'homeshow-leads'}.csv"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${{ contest: 'prize-draw-entries', ribit: 'code-compass-demo-requests' }[kind] || 'homeshow-leads'}.csv"`);
     res.send([header, ...rows].map(r => r.map(esc).join(',')).join('\r\n'));
 });
 
@@ -469,12 +492,21 @@ async function pushPending() {
     if (!cfg) return; // not connected yet — leads wait on disk, nothing is lost
     pushing = true;
     try {
-        const formCfg = formConfig();
         for (const lead of store.pendingLeads()) {
+            // Per lead, not per sweep: each brand carries its own Lead_Source,
+            // owner and note wording. Hoisting this out of the loop silently
+            // filed every brand's leads under the first one.
+            let formCfg;
+            try {
+                formCfg = formConfig(lead.kind);
+            } catch (err) {
+                store.updateLead(lead.id, { status: 'error', error: `config for "${lead.kind}" is invalid: ${err.message}` });
+                continue;
+            }
             // Prize-draw entries stay out of the CRM. They are exported as
             // their own CSV instead — a draw entrant has not asked for a
             // quote, and mixing them into the show's leads would spoil both.
-            if (lead.kind === 'contest') {
+            if (!CRM_KINDS.has(lead.kind || 'enquiry')) {
                 store.updateLead(lead.id, { status: 'local', syncedAt: null });
                 continue;
             }

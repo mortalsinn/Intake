@@ -15,7 +15,7 @@
 <body>
   <header class="masthead">
     <div class="masthead-inner">
-      <img class="brand-wide" src="logo-mark.png" alt="Ironwood Stair &amp; Rail Inc." />
+      <img class="brand-wide" id="brand-wide" src="logo-mark.png" alt="Ironwood Stair &amp; Rail Inc." />
       <h1 id="headline">Let's talk about your project</h1>
       <p id="subhead"></p>
     </div>
@@ -28,7 +28,7 @@
         <button type="button" id="reset-btn" class="reset-btn">↺ Start over</button>
       </div>
       <form id="lead-form" autocomplete="off" novalidate></form>
-<div class="awards">
+<div class="awards" data-awards>
         <img src="award-2025.png" alt="Consumer Choice Award 2025, Southern Alberta" />
         <img src="award-2026.png" alt="Consumer Choice Award 2026, Southern Alberta" />
         <span class="awards-note">Consumer Choice Award winner<br />2025 &amp; 2026, Southern Alberta</span>
@@ -48,22 +48,35 @@
     <a class="staff-link" href="admin.html" aria-label="Staff administration">⚙</a>
   </footer>
 
+  <!-- Brand chooser. One iPad serves two companies at this show, so the
+       first question is whose booth the visitor is standing at. It is a
+       screen of its own rather than a toggle: a visitor must never be able
+       to half-fill an Ironwood form and submit it as a Ribit demo. -->
+  <div id="splash" class="splash" hidden>
+    <div class="splash-inner">
+      <h1 class="splash-headline" id="splash-headline">Welcome</h1>
+      <p class="splash-sub" id="splash-sub"></p>
+      <div class="splash-grid" id="splash-grid"></div>
+      <p class="splash-foot" id="splash-foot"></p>
+    </div>
+  </div>
+
   <!-- attract screen: what the booth shows between visitors -->
   <div id="attract" class="attract" hidden>
     <div class="attract-inner">
-      <img class="brand-stacked" src="logo-stacked.png" alt="Ironwood Stair &amp; Rail Inc." />
+      <img class="brand-stacked" id="attract-logo" src="logo-stacked.png" alt="Ironwood Stair &amp; Rail Inc." />
       <p class="attract-line" id="attract-line">EXPERIENCE THE IRONWOOD DIFFERENCE</p>
-      <div class="attract-choices">
-        <button type="button" class="attract-cta" data-kind="enquiry">Tell us about your project</button>
-        <button type="button" class="attract-cta secondary" data-kind="contest">Enter the draw</button>
-      </div>
-      <div class="awards">
+      <div class="attract-choices" id="attract-choices"></div>
+      <div class="awards" data-awards>
         <img src="award-2025.png" alt="Consumer Choice Award 2025, Southern Alberta" />
         <img src="award-2026.png" alt="Consumer Choice Award 2026, Southern Alberta" />
         <span class="awards-note">Consumer Choice Award winner<br />2025 &amp; 2026, Southern Alberta</span>
       </div>
+      <!-- The way back to the other company. Only rendered when the kiosk is
+           actually serving more than one brand. -->
+      <button type="button" class="attract-switch" id="attract-switch" hidden></button>
     </div>
-    <svg class="attract-rail" viewBox="0 0 640 190" aria-hidden="true" preserveAspectRatio="xMidYMax meet">
+    <svg class="attract-rail" id="attract-rail" viewBox="0 0 640 190" aria-hidden="true" preserveAspectRatio="xMidYMax meet">
       <!-- stylized descending stair with balusters and handrail -->
       <path d="M20 40 L 620 160" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
       <path d="M20 62 L 620 182" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>

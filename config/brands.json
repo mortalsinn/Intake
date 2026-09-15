@@ -1,0 +1,48 @@
+{
+  "splash": {
+    "headline": "Welcome",
+    "subhead": "Which can we help you with today?",
+    "footNote": "Two companies, one desk. Choose either \u2014 you can come back and do both."
+  },
+  "brands": [
+    {
+      "id": "ironwood",
+      "name": "Ironwood Stair & Rail",
+      "logo": "logo-stacked.png",
+      "logoAlt": "Ironwood Stair & Rail Inc.",
+      "tagline": "Stairs, railings, custom metalwork & glass",
+      "blurb": "Talk to us about a stair, a railing, or custom glass and metalwork for your home.",
+      "awards": true,
+      "rail": true,
+      "ctas": [
+        {
+          "label": "Tell us about your project",
+          "kind": "enquiry"
+        },
+        {
+          "label": "Enter the draw",
+          "kind": "contest",
+          "secondary": true
+        }
+      ],
+      "cardLogo": "logo-mark.png"
+    },
+    {
+      "id": "ribit",
+      "name": "Code Compass by Ribit",
+      "logo": "ribit-logo.png",
+      "logoAlt": "Code Compass by Ribit",
+      "tagline": "Building code answers in seconds, with the citation",
+      "blurb": "Software for the construction industry. Ask the building code a plain question, get the answer and the clause it came from.",
+      "awards": false,
+      "rail": false,
+      "ctas": [
+        {
+          "label": "Book a demo",
+          "kind": "ribit"
+        }
+      ],
+      "cardLogo": "ribit-logo.png"
+    }
+  ]
+}

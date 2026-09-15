@@ -1,0 +1,14 @@
+# Captured leads and Zoho credentials must never end up in an image that
+# gets handed to somebody. data/zoho.json holds a live refresh token.
+data
+.env
+.env.*
+node_modules
+npm-debug.log
+.git
+.gitignore
+tests
+*.md
+Dockerfile
+.dockerignore
+docker-compose.yml

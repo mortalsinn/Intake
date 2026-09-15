@@ -63,6 +63,12 @@
             badge.className = 'badge ok';
             badge.textContent = `Connected — zoho.${s.zoho.datacenter}`;
         }
+        // Say it plainly and say it first: somebody handed this build to try
+        // must never believe a captured lead reached the CRM.
+        if (s.demoMode) {
+            badge.className = 'badge warn';
+            badge.textContent = 'DEMO MODE — leads are captured and exportable, but never sent to Zoho.';
+        }
         if (s.zoho.requiredScope) $('#scope-str').textContent = s.zoho.requiredScope;
         const ribit = $('#c-ribit');
         if (ribit) ribit.textContent = s.counts?.byKind?.ribit?.total ?? 0;

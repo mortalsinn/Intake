@@ -1,0 +1,23 @@
+# One command to run the kiosk for somebody to try:
+#
+#   docker compose up
+#
+# Then open http://localhost:3100 — admin at /admin.html, PIN 162534.
+# Demo mode is on, so nothing can reach a CRM.
+services:
+  intake:
+    build: .
+    ports:
+      - "3100:3100"
+    environment:
+      # Remove this line ONLY for a real booth, and set a real ADMIN_PIN with
+      # it — the admin page shows customer names, phone numbers and emails.
+      DEMO_MODE: "1"
+      ADMIN_PIN: "162534"
+    volumes:
+      # What the tester captures survives `docker compose down`.
+      - intake-data:/data
+    restart: unless-stopped
+
+volumes:
+  intake-data:

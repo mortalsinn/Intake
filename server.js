@@ -118,6 +118,7 @@ app.get('/api/form', (req, res) => {
 app.get('/api/status', (req, res) => {
     const z = store.getZoho();
     res.json({
+        demoMode: store.isDemo(),
         zohoConnected: !!z,
         // A refused write outranks the optimistic scope guess: proof beats
         // assumption, and env-var connections can only be proven this way.
@@ -298,6 +299,7 @@ function requirePin(req, res, next) {
 app.get('/api/admin/status', requirePin, (req, res) => {
     const z = store.getZoho();
     res.json({
+        demoMode: store.isDemo(),
         zoho: z ? {
             connected: true,
             datacenter: z.datacenter,
@@ -709,6 +711,10 @@ if (require.main === module) {
         const nets = Object.values(os.networkInterfaces()).flat()
             .filter(n => n && n.family === 'IPv4' && !n.internal)
             .map(n => `http://${n.address}:${PORT}`);
+        if (store.isDemo()) {
+            console.log('=== DEMO MODE — this build cannot reach Zoho CRM. ===');
+            console.log('    Leads are captured, queued and exportable as CSV, and go nowhere else.');
+        }
         console.log(`Home-show intake running on port ${PORT}`);
         console.log(`  Kiosk (open this on the iPad): ${nets[0] || `http://localhost:${PORT}`}`);
         for (const url of nets.slice(1)) console.log(`                            or: ${url}`);

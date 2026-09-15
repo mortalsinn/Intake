@@ -214,6 +214,39 @@ the machine where you connected):
   anything mid-flight to Zoho is retried afterwards, but there is no reason
   to take the risk while a booth is running. Turn Auto-Deploy off.
 
+## Handing it to somebody to try
+
+```bash
+docker compose up        # then open http://localhost:3100
+```
+
+Or without compose:
+
+```bash
+docker build -t intake .
+docker run -p 3100:3100 intake
+```
+
+Admin is `/admin.html`, PIN `162534`.
+
+**The container defaults to DEMO MODE (`DEMO_MODE=1`), and that is the point
+of it.** A demo build cannot reach a CRM at all: `store.getZoho()` refuses to
+hand out credentials, so there is one chokepoint rather than a flag each call
+site has to remember to check. Verified by running it with a real
+`data/zoho.json` present — still reports disconnected, still makes zero Zoho
+calls.
+
+Everything else is the real thing, which is what makes it worth testing:
+device queue, append-only journal, disk persistence, dedupe, the brand
+chooser, both forms, the admin page and CSV export all behave exactly as they
+do at a booth. Leads simply sit at `pending` forever, and the admin badge says
+`DEMO MODE — leads are captured and exportable, but never sent to Zoho`.
+
+`.dockerignore` excludes `data/`, so a live refresh token can never be baked
+into an image you hand out. Drop `DEMO_MODE` only for a real booth — and set
+your own `ADMIN_PIN` when you do, because the one in this repository is
+public.
+
 ## Tests
 
 ```bash

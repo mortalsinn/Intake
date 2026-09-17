@@ -448,7 +448,12 @@
             pip.classList.toggle('done', n < currentStep);
         }
 
-        $('#step-back').hidden = currentStep === 0;
+        // Back is shown on the first step too, where it means "leave this
+        // form" rather than "previous step". The prize draw is a single
+        // step, so hiding it there left no way out but "Start over", which
+        // does not read as "I did not mean to open this".
+        disarmBack();
+        $('#step-back').textContent = currentStep === 0 ? 'Back' : 'Back';
         $('#step-next').textContent = currentStep === stepNames.length - 1
             ? (config.show.submitLabel || 'Submit')
             : 'Continue';
@@ -460,7 +465,36 @@
      *  something they have not been shown yet. */
     const fieldsOnStep = () => config.fields.filter(f => f.section === stepNames[currentStep]);
 
-    $('#step-back').addEventListener('click', () => showStep(currentStep - 1));
+    // Arming, as on "Start over": one stray tap must not throw away what a
+    // visitor has typed, but a modal at a busy booth is worse than the risk.
+    let backArmed = null;
+    function disarmBack() {
+        clearTimeout(backArmed);
+        backArmed = null;
+        const b = $('#step-back');
+        b.classList.remove('armed');
+        b.textContent = 'Back';
+    }
+
+    $('#step-back').addEventListener('click', () => {
+        if (currentStep > 0) return showStep(currentStep - 1);
+        // First step: Back leaves the form and returns to this brand's
+        // welcome screen. Nothing typed means nothing to confirm.
+        if (!formHasContent()) return leaveForm();
+        if (backArmed) { disarmBack(); return leaveForm(); }
+        const b = $('#step-back');
+        b.classList.add('armed');
+        b.textContent = 'Tap again to leave';
+        backArmed = setTimeout(disarmBack, 4000);
+    });
+
+    /** Abandon the form and go back to the welcome screen for this brand. */
+    function leaveForm() {
+        for (const k of Object.keys(state)) delete state[k];
+        render();
+        window.scrollTo(0, 0);
+        showAttract();
+    }
     $('#step-next').addEventListener('click', () => {
         if (!validate(fieldsOnStep())) return;
         if (currentStep < stepNames.length - 1) showStep(currentStep + 1);
@@ -957,7 +991,9 @@
             blurb.textContent = b.blurb || '';
             const go = document.createElement('span');
             go.className = 'splash-go';
-            go.textContent = 'Choose';
+            // Name the destination rather than the act: "Choose" tells a
+            // visitor nothing about what the tap will do.
+            go.textContent = b.chooseLabel || `Continue to ${b.name}`;
             card.append(logo, tag, blurb, go);
             grid.appendChild(card);
         }
@@ -1214,15 +1250,6 @@
         $('#idle-check').hidden = true;
         armIdle();
     }
-
-    // DEMO ONLY — fires the idle prompt on demand so it can be shown off
-    // without waiting five minutes. Delete this block and the button in
-    // index.html when it is no longer wanted.
-    $('#demo-idle')?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        clearTimeout(idleTimer);
-        askBeforeClearing();
-    });
 
     $('#idle-keep').addEventListener('click', keepGoing);
     $('#idle-clear').addEventListener('click', wipeAndGoHome);

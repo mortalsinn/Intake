@@ -143,7 +143,8 @@ body::before {
 .reset-btn:active { transform: scale(0.95); }
 /* Armed: one tap already landed on a form with content, so the next tap
    clears it. Loud on purpose — this state destroys someone's typing. */
-.reset-btn.armed {
+.reset-btn.armed,
+.step-back.armed {
   background: var(--warn);
   border-color: var(--warn);
   color: #fff;
@@ -904,6 +905,7 @@ body.phone .submit { margin-top: 18px; min-height: 58px; font-size: 18px; }
 
 .step-nav { display: flex; gap: 12px; align-items: center; margin-top: 26px; }
 .step-nav .submit { flex: 1; margin: 0; }
+.step-back.armed { white-space: nowrap; }
 .step-back {
   font: inherit; font-size: 16px; font-weight: 600;
   padding: 15px 26px; min-height: 68px;
@@ -1057,20 +1059,6 @@ input::placeholder, textarea::placeholder {
   font-style: italic;
   color: #a8a296;
   opacity: 1;              /* Firefox dims placeholders by default */
-}
-
-/* DEMO ONLY — remove with the button in index.html. */
-.demo-btn {
-  pointer-events: auto;
-  font: inherit;
-  font-size: 12px;
-  padding: 6px 12px;
-  margin-right: 10px;
-  border-radius: 999px;
-  border: 1px dashed rgba(221, 202, 147, 0.5);
-  background: rgba(221, 202, 147, 0.08);
-  color: var(--gold-pale);
-  cursor: pointer;
 }
 
 /* "Online" is reassurance, not an announcement — nearly invisible until
@@ -1278,11 +1266,17 @@ button.attract-cta:active { transform: scale(0.97); }
   color: #c3ccd4;
 }
 .splash-go {
-  align-self: flex-start;
-  padding: 14px 34px;
+  /* Stretched and centred rather than hugging its text: naming the
+     destination makes the two labels different lengths, and left-aligned
+     pills of different widths sat at different heights once the longer one
+     wrapped. Equal width, one line, both cards' buttons on the same line. */
+  align-self: stretch;
+  text-align: center;
+  white-space: nowrap;
+  padding: 15px 20px;
   border: 2px solid var(--bronze);
   border-radius: 999px;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 600;
   color: var(--gold-pale);
 }

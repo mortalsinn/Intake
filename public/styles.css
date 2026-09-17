@@ -1175,12 +1175,14 @@ button.attract-cta:active { transform: scale(0.97); }
   position: fixed;
   inset: 0;
   z-index: 25;
+  /* No fade-in on the cover that is up at first paint — a fade from
+     transparent is exactly the flash of the shell underneath. */
+  animation: none;
   display: grid;
   place-items: center;
   overflow-y: auto;
   color: #fff;
   background: radial-gradient(1200px 700px at 50% -10%, #26323d 0%, #161e26 55%, #0b1116 100%) #0b1116;
-  animation: fadeIn 0.4s;
 }
 .splash-inner {
   width: 100%;

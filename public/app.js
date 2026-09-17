@@ -427,12 +427,19 @@
         currentStep = Math.max(0, Math.min(i, stepNames.length - 1));
         const name = stepNames[currentStep];
 
+        // The entrance stagger restarts at zero on every step. It was indexed
+        // across the whole form, so step two's first field waited out all of
+        // step one's delays — half a second of blank card after every
+        // Continue, a full second by step three. The delay is meant to be
+        // felt as a cascade, not as a page that has not loaded.
+        let shown = 0;
         for (const el of form.querySelectorAll('.field, .section-head')) {
             const owner = el.classList.contains('section-head')
                 ? el.dataset.section
                 : (config.fields.find(f => f.id === el.dataset.id) || {}).section;
             // Section headings are redundant once the step itself is titled.
             el.hidden = el.classList.contains('section-head') || owner !== name;
+            if (!el.hidden) el.style.setProperty('--i', shown++);
         }
 
         for (const pip of $('#steps').children) {

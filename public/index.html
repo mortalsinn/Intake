@@ -52,7 +52,12 @@
        first question is whose booth the visitor is standing at. It is a
        screen of its own rather than a toggle: a visitor must never be able
        to half-fill an Ironwood form and submit it as a Ribit demo. -->
-  <div id="splash" class="splash" hidden>
+  <!-- Visible from the first paint, NOT hidden: everything else on this page
+       is hidden or empty until the spec has been fetched, and on a cold load
+       over show wifi that took long enough to show the bare masthead, an
+       empty form and a Continue button before the welcome screen arrived.
+       boot() decides what replaces this. -->
+  <div id="splash" class="splash">
     <div class="splash-inner">
       <h1 class="splash-headline" id="splash-headline">Welcome</h1>
       <p class="splash-sub" id="splash-sub"></p>

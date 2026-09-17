@@ -163,7 +163,11 @@ app.post('/api/leads', (req, res) => {
     // The disk write above is the durable receipt — respond now, push later.
     // Retries from the iPad land here again with the same id and dedupe.
     // uploadUrl comes back so the kiosk can show the customer a QR code.
-    res.json({ ok: true, duplicate: !added, uploadUrl: uploadPath(req, uploadToken) });
+    // No upload link for a brand without photographs: the kiosk draws the QR
+    // only when a link comes back, so a demo request never asks a software
+    // buyer for pictures of their project.
+    const uploadUrl = cfg.photos === false ? null : uploadPath(req, uploadToken);
+    res.json({ ok: true, duplicate: !added, uploadUrl });
     if (added) setImmediate(pushPending);
 });
 
@@ -221,10 +225,11 @@ app.get('/u/:token', (req, res) => {
 app.get('/u/:token/info', (req, res) => {
     const lead = store.leadByUploadToken(req.params.token);
     if (!lead) return res.status(404).json({ error: 'This link has expired.' });
-    const cfg = formConfig();
+    let cfg;
+    try { cfg = formConfig(lead.kind); } catch { cfg = { company: {} }; }
     res.json({
         firstName: lead.fields.firstName || '',
-        company: cfg.show.company || 'Ironwood Stair & Rail',
+        company: cfg.company?.name || 'Ironwood Stair & Rail',
         already: (lead.photos || []).length,
     });
 });
@@ -399,7 +404,7 @@ app.get('/api/admin/audit', requirePin, async (req, res) => {
             const vanished = claimed.filter(l => !inCrm.has(l.zoho.leadId));
             out.zoho = {
                 checked: true,
-                source,
+                sources,
                 inCrmForThisShow: inCrm.size,
                 weBelieveSynced: claimed.length,
                 notYetSent: leads.filter(l => l.zoho.status !== 'synced').length,
@@ -502,7 +507,10 @@ async function pushPending() {
             try {
                 formCfg = formConfig(lead.kind);
             } catch (err) {
-                store.updateLead(lead.id, { status: 'error', error: `config for "${lead.kind}" is invalid: ${err.message}` });
+                // 'failed' so it shows in the declined count and the admin
+                // Retry picks it up once the config is fixed. A status of its
+                // own would sit invisible behind "Awaiting transfer" forever.
+                store.updateLead(lead.id, { status: 'failed', error: `config for "${lead.kind}" is invalid: ${err.message}` });
                 continue;
             }
             // Prize-draw entries stay out of the CRM. They are exported as
@@ -629,7 +637,6 @@ async function pushPhotos() {
     if (pushingPhotos) return;
     const cfg = store.getZoho();
     if (!cfg) return;
-    const formCfg = formConfig();
     pushingPhotos = true;
     try {
         for (const lead of store.leadsWithPendingPhotos()) {
@@ -692,7 +699,7 @@ async function pushPhotos() {
                     mayShare: perm.mayShare,
                     statement: perm.statement,
                     at: new Date().toISOString(),
-                    showName: formCfg.show.name,
+                    showName: formConfig(lead.kind).show.name,
                 }));
                 store.markPermissionPushed(lead.id);
             } catch (err) {

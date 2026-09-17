@@ -162,7 +162,7 @@
                 lines.push(`Backup and server agree: ${a.journal.live} enquiries, none missing.`);
             }
             if (a.zoho.checked) {
-                lines.push(`Zoho currently holds ${a.zoho.inCrmForThisShow} for "${a.zoho.source}".`);
+                lines.push(`Zoho currently holds ${a.zoho.inCrmForThisShow} across ${(a.zoho.sources || []).map(x => `"${x}"`).join(' and ')}.`);
                 if (a.zoho.notYetSent) lines.push(`${a.zoho.notYetSent} still to transfer.`);
                 if (a.zoho.missingFromCrm.length) {
                     lines.push(`${a.zoho.missingFromCrm.length} enquiry(ies) were sent to Zoho and are no longer there — deleted from the CRM, or never landed: ` +
@@ -217,6 +217,44 @@
         a.download = 'prize-draw-entries.csv';
         a.click();
         URL.revokeObjectURL(a.href);
+    });
+
+    /**
+     * This iPad's own permanent copy of everything it captured.
+     *
+     * The kiosk keeps every submission in localStorage forever, never cleared
+     * by a successful sync — it is the copy that survives the server and its
+     * disk being lost. This page shares the kiosk's origin, so it can read
+     * that copy directly. It only has content on the iPad that did the
+     * capturing: on any other device it is honestly empty.
+     */
+    $('#btn-device-csv').addEventListener('click', () => {
+        let rows = [];
+        try { rows = JSON.parse(localStorage.getItem('iw_intake_archive_v1') || '[]'); } catch { /* empty */ }
+        const msg = $('#verify-msg');
+        if (!rows.length) {
+            msg.className = 'msg';
+            msg.textContent = 'This device has not captured any enquiries. Open this page on the iPad that took them.';
+            return;
+        }
+        const keys = [...new Set(rows.flatMap(r => Object.keys(r.fields || {})))].filter(k => !k.startsWith('_'));
+        const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+        const csv = [
+            ['capturedAt', 'kind', ...keys, 'priority', 'inspiration'].map(esc).join(','),
+            ...rows.map(r => [
+                r.submittedAt, r.kind || 'enquiry',
+                ...keys.map(k => { const v = r.fields?.[k]; return Array.isArray(v) ? v.join('; ') : v ?? ''; }),
+                r.fields?._boothRating || '',
+                (r.fields?._inspiration || []).join('; '),
+            ].map(esc).join(',')),
+        ].join('\r\n');
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+        a.download = `intake-device-copy-${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+        msg.className = 'msg ok';
+        msg.textContent = `Exported ${rows.length} enquiries held on this device.`;
     });
 
     $('#btn-journal').addEventListener('click', async () => {

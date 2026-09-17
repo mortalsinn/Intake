@@ -54,31 +54,12 @@
         }
     }
 
-    /** The device's own copy, as a spreadsheet, with no network at all. */
-    function exportArchive() {
-        const rows = loadArchive();
-        if (!rows.length) return alert('Nothing captured on this device yet.');
-        const keys = [...new Set(rows.flatMap(r => Object.keys(r.fields || {})))]
-            .filter(k => !k.startsWith('_'));
-        const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-        const csv = [
-            ['capturedAt', ...keys, 'priority', 'inspiration'].map(esc).join(','),
-            ...rows.map(r => [
-                r.submittedAt,
-                ...keys.map(k => {
-                    const v = r.fields?.[k];
-                    return Array.isArray(v) ? v.join('; ') : v ?? '';
-                }),
-                r.fields?._boothRating || '',
-                (r.fields?._inspiration || []).join('; '),
-            ].map(esc).join(',')),
-        ].join('\r\n');
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-        a.download = `intake-device-copy-${new Date().toISOString().slice(0, 10)}.csv`;
-        a.click();
-        URL.revokeObjectURL(a.href);
-    }
+    // The lead whose QR the screen is waiting for. After a wifi outage the
+    // queue can flush several backed-up leads at once, and drawing a QR for
+    // each as it lands showed the PREVIOUS visitor's upload link on the
+    // current visitor's screen — a scan would have put their photographs
+    // into somebody else's enquiry.
+    let qrForLead = null;
 
     let syncing = false;
     async function flushQueue() {
@@ -97,7 +78,7 @@
                         const body = await res.json().catch(() => ({}));
                         // The server owns the upload token, so the QR can only
                         // be drawn once the lead has actually reached it.
-                        if (body.uploadUrl) showQr(body.uploadUrl);
+                        if (body.uploadUrl && item.id === qrForLead) showQr(body.uploadUrl);
                         queue = queue.filter(q => q.id !== item.id);
                         saveQueue(queue);
                     } else if (res.status === 400) {
@@ -555,7 +536,9 @@
         // Sent straight away: the QR code needs the server's upload token, so
         // the lead has to arrive before the thank-you card can be useful. The
         // server holds the Zoho push briefly so a priority tap still catches
-        // the same record — see holdUntil in server.js.
+        // the same record — see holdUntil in server.js. Which lead may draw a
+        // QR is decided first, or the flush would race the decision.
+        qrForLead = (kind === 'contest' || config.photos === false) ? null : record.id;
         flushQueue();
 
         // Naming the visitor on the staff step matters at a busy booth: two
@@ -568,10 +551,16 @@
         //   QR  ->  Thank you  ->  staff priority  ->  welcome
         // The safety timeouts below exist only so an abandoned iPad returns
         // to the welcome screen; they are far longer than anyone needs.
-        // A draw entry has no project photographs to send, so it goes
-        // straight to the thank you.
-        if (kind === 'contest') showThanksStep(record.id, name);
-        else showQrStep(record.id, name);
+        // A draw entry has no project photographs to send, and neither does
+        // a brand that says so in its spec (Code Compass has no project to
+        // photograph). Those go straight to the thank you.
+        if (kind === 'contest' || config.photos === false) {
+            qrForLead = null;
+            showThanksStep(record.id, name);
+        } else {
+            qrForLead = record.id;
+            showQrStep(record.id, name);
+        }
     });
 
     // ---------- inspiration gallery ----------
@@ -974,14 +963,43 @@
      * chooser screen exists to prevent.
      */
     async function useBrand(id) {
-        brand = brandById(id) || brand;
-        if (!brand) return;
+        const next = brandById(id);
+        if (!next) return false;
+        const prevBrand = brand, prevKind = kind, prevConfig = config;
+        kind = next.ctas?.[0]?.kind || 'enquiry';
+        // Offline, first time this brand is tapped, nothing cached: there is
+        // no spec to show. Stay exactly where we were rather than painting
+        // this brand's colours over the OTHER brand's questions.
+        if (!await loadConfig()) {
+            brand = prevBrand; kind = prevKind; config = prevConfig;
+            return false;
+        }
+        brand = next;
         document.documentElement.dataset.brand = brand.id;
         for (const k of Object.keys(state)) delete state[k];
-        kind = brand.ctas?.[0]?.kind || 'enquiry';
-        await loadConfig();
         paintBrandChrome();
         render();
+        return true;
+    }
+
+    /**
+     * Cache every brand's spec while the network is up.
+     *
+     * The form cache only filled when a brand was first tapped, so a kiosk
+     * that opened online on Ironwood and lost the wifi before anyone chose
+     * Code Compass had no Code Compass spec to fall back to. The morning of
+     * a show is exactly when the wifi is worst.
+     */
+    async function warmFormCaches() {
+        const kinds = new Set();
+        for (const b of brands?.brands || []) for (const c of b.ctas || []) kinds.add(c.kind);
+        await Promise.all([...kinds].map(async (k) => {
+            if (localStorage.getItem(`iw_form_cache_${k}`)) return;
+            try {
+                const res = await fetch(`/api/form?kind=${encodeURIComponent(k)}`);
+                if (res.ok) localStorage.setItem(`iw_form_cache_${k}`, JSON.stringify(await res.json()));
+            } catch { /* offline now; the next online boot fills it */ }
+        }));
     }
 
     /** Everything on the attract screen and masthead that a brand owns. */
@@ -1044,7 +1062,10 @@
     splash?.addEventListener('click', async (e) => {
         const id = e.target.closest('[data-choose-brand]')?.dataset.chooseBrand;
         if (!id) return;
-        await useBrand(id);
+        if (!await useBrand(id)) {
+            alert('That form is not available while the wifi is down. Please try the other option, or try again in a moment.');
+            return;
+        }
         splash.hidden = true;
         showAttract();
     });
@@ -1241,6 +1262,7 @@
             // Default to the first brand so the form, theme and cached spec
             // are all coherent before anybody taps anything.
             await useBrand((brands.brands[0] || {}).id);
+            warmFormCaches();
             if (!config) {
                 document.body.innerHTML = '<p style="padding:40px;font-size:20px">Can\'t reach the intake server and no cached form yet — check the wifi and reload.</p>';
                 return;

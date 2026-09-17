@@ -1134,6 +1134,23 @@ button.attract-cta:active { transform: scale(0.97); }
    Ironwood's classical wordmark, and a software product wearing them reads
    as the wrong company. */
 
+/* Ironwood's own palette, stated explicitly rather than left to :root.
+   The chooser shows BOTH companies at once and themes each card with
+   data-theme, so a card must carry its brand's colours no matter which
+   brand is currently loaded. Ribit had a token block and Ironwood did
+   not, so the Ironwood card inherited whatever <html data-brand> held —
+   and after anybody chose Code Compass once, the Ironwood card's rule,
+   its heading and its Choose button all turned green. */
+[data-theme="ironwood"] {
+  --bronze: #91772e;
+  --bronze-deep: #7a6426;
+  --amber: #f0ad4e;
+  --gold-pale: #ddca93;
+  --navy: #1a252f;
+  --night: #141b22;
+  --gold-grad: linear-gradient(105deg, #ddca93 0%, #f0ad4e 40%, #91772e 100%);
+}
+
 [data-brand="ribit"],
 [data-theme="ribit"] {
   --bronze: #189C3C;

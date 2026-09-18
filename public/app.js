@@ -33,6 +33,66 @@
     const $ = (sel) => document.querySelector(sel);
     const form = $('#lead-form');
 
+    // ---------- screen transitions ----------
+
+    /**
+     * Show and hide the full-screen panels with motion instead of a cut.
+     *
+     * Every panel used to appear and vanish by toggling `hidden`, which is
+     * what made a booth of considered screens feel like a slide projector.
+     *
+     * The fallback timer is not belt-and-braces, it is required: a browser
+     * does not run animations in a backgrounded tab, so `animationend` may
+     * never fire — and without it a panel would stay half-gone and the
+     * kiosk would strand a visitor on a dead screen. The timer always
+     * finishes the job.
+     */
+    const MOTION_OFF = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const OUT_MS = 240;
+    // Longer than the slowest entrance on the page (the stair, 0.3s in and
+    // 1.1s long), so stripping the class can never cut an animation short.
+    const IN_MS = 1600;
+    const inGuards = new WeakMap();
+
+    function reveal(el) {
+        if (!el) return;
+        el.classList.remove('is-out');
+        el.hidden = false;
+        if (MOTION_OFF) return;
+        // The entrance classes use `both` fill, so before the animation runs
+        // the element sits at the FROM state — transparent. A browser defers
+        // animations in a backgrounded tab, so without this guard a panel
+        // could be shown and still be invisible. Clearing the class returns
+        // it to its plain, fully visible state whatever happened.
+        clearTimeout(inGuards.get(el));
+        const clear = () => { clearTimeout(inGuards.get(el)); inGuards.delete(el); el.classList.remove('is-in'); };
+        el.classList.remove('is-in');
+        void el.offsetWidth;            // restart the animation on every show
+        el.classList.add('is-in');
+        inGuards.set(el, setTimeout(clear, IN_MS));
+    }
+
+    /** Hide with an exit animation, then run `after`. Always runs `after`. */
+    function conceal(el, after) {
+        if (!el || el.hidden) { after?.(); return; }
+        if (MOTION_OFF) { el.hidden = true; after?.(); return; }
+        let finished = false;
+        const finish = () => {
+            if (finished) return;
+            finished = true;
+            clearTimeout(guard);
+            el.classList.remove('is-out', 'is-in');
+            el.hidden = true;
+            after?.();
+        };
+        clearTimeout(inGuards.get(el));
+        inGuards.delete(el);
+        el.classList.remove('is-in');
+        el.classList.add('is-out');
+        el.addEventListener('animationend', (e) => { if (e.target === el) finish(); }, { once: true });
+        const guard = setTimeout(finish, OUT_MS + 120);
+    }
+
     // ---------- local queue ----------
 
     const loadQueue = () => JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
@@ -424,7 +484,12 @@
     }
 
     function showStep(i) {
-        currentStep = Math.max(0, Math.min(i, stepNames.length - 1));
+        const target = Math.max(0, Math.min(i, stepNames.length - 1));
+        // Fields enter from the side you are travelling towards, so Continue
+        // and Back feel like moving through the form rather than like two
+        // unrelated screens being swapped.
+        form.style.setProperty('--dir', target < currentStep ? -1 : 1);
+        currentStep = target;
         const name = stepNames[currentStep];
 
         // The entrance stagger restarts at zero on every step. It was indexed
@@ -626,7 +691,7 @@
         // Show FIRST, then paint: the column count is measured from the
         // grid's width, and a hidden element measures zero — which silently
         // collapsed the gallery to the narrowest layout.
-        overlay.hidden = false;
+        reveal(overlay);
         paintGrid();
     }
 
@@ -750,7 +815,7 @@
         lightboxAt = list.findIndex(p => p.id === id);
         if (lightboxAt < 0) return;
         paintLightbox();
-        $('#lightbox').hidden = false;
+        reveal($('#lightbox'));
     }
 
     function paintLightbox() {
@@ -777,7 +842,7 @@
         btn.classList.toggle('on', picked);
     }
 
-    const closeLightbox = () => { $('#lightbox').hidden = true; };
+    const closeLightbox = () => conceal($('#lightbox'));
 
     $('#lb-close').addEventListener('click', closeLightbox);
     $('#lightbox').addEventListener('click', (e) => {
@@ -793,7 +858,7 @@
         paintLightbox();
     });
 
-    $('#gallery-done').addEventListener('click', () => { $('#gallery').hidden = true; });
+    $('#gallery-done').addEventListener('click', () => conceal($('#gallery')));
 
     // ---------- after submitting: QR, thank you, staff ----------
 
@@ -816,19 +881,17 @@
         const done = () => {
             clearTimeout(bail);
             panel.onclick = null;
-            panel.hidden = true;
-            showThanksStep(leadId, who);
+            conceal(panel, () => showThanksStep(leadId, who));
         };
         const bail = setTimeout(() => {
             clearTimeout(bail);
             panel.onclick = null;
-            panel.hidden = true;
             clearQr();
-            showSplash();   // nobody there; do not leave a QR on screen
+            conceal(panel, showSplash);   // nobody there; do not leave a QR on screen
         }, QR_BAIL_MS);
 
         panel.onclick = done;
-        panel.hidden = false;
+        reveal(panel);
     }
 
     /** Step 2: the goodbye. Also waits to be tapped. */
@@ -838,17 +901,15 @@
         const done = () => {
             clearTimeout(bail);
             panel.onclick = null;
-            panel.hidden = true;
-            askPriority(leadId, who);
+            conceal(panel, () => askPriority(leadId, who));
         };
         const bail = setTimeout(() => {
             clearTimeout(bail);
             panel.onclick = null;
-            panel.hidden = true;
-            showSplash();   // nobody tapped, so nobody is holding it
+            conceal(panel, showSplash);   // nobody tapped, so nobody is holding it
         }, THANKS_BAIL_MS);
         panel.onclick = done;
-        panel.hidden = false;
+        reveal(panel);
     }
 
     // ---------- staff step: enquiry priority ----------
@@ -871,8 +932,7 @@
         const finish = () => {
             clearTimeout(bail);
             step.onclick = null;
-            step.hidden = true;
-            showSplash();
+            conceal(step, showSplash);
         };
         // If staff walk off mid-prompt, do not strand the booth on an
         // internal screen — fall back to the welcome.
@@ -903,7 +963,7 @@
             }
             if (e.target.closest('#staff-skip')) finish();
         };
-        step.hidden = false;
+        reveal(step);
     }
 
     // ---------- photograph QR ----------
@@ -1097,8 +1157,8 @@
         if (!splash || !brands?.brands?.length) return showAttract();
         for (const k of Object.keys(state)) delete state[k];
         clearTimeout(idleTimer);
-        attract.hidden = true;
-        splash.hidden = false;
+        conceal(attract);
+        reveal(splash);
         paintSyncPill();
     }
 
@@ -1109,13 +1169,13 @@
             alert('That form is not available while the wifi is down. Please try the other option, or try again in a moment.');
             return;
         }
-        splash.hidden = true;
+        conceal(splash);
         showAttract();
     });
 
     function showAttract() {
-        if (splash) splash.hidden = true;
-        attract.hidden = false;
+        if (splash) conceal(splash);
+        reveal(attract);
         clearTimeout(idleTimer);
         paintSyncPill();
     }
@@ -1132,7 +1192,7 @@
             await loadConfig();
             render();
         }
-        attract.hidden = true;
+        conceal(attract);
         paintSyncPill();      // hides it the moment the form appears
         armIdle();
         // The tap is a user gesture, so iOS allows the keyboard: first field
@@ -1209,7 +1269,7 @@
 
     function wipeAndGoHome() {
         clearTimeout(graceTimer);
-        $('#idle-check').hidden = true;
+        conceal($('#idle-check'));
         for (const k of Object.keys(state)) delete state[k];
         render();
         window.scrollTo(0, 0);
@@ -1233,7 +1293,7 @@
         const countEl = $('#idle-count');
         let left = IDLE_GRACE_S;
         countEl.textContent = left;
-        panel.hidden = false;
+        reveal(panel);
 
         clearTimeout(graceTimer);
         const tick = () => {
@@ -1247,7 +1307,7 @@
 
     function keepGoing() {
         clearTimeout(graceTimer);
-        $('#idle-check').hidden = true;
+        conceal($('#idle-check'));
         armIdle();
     }
 

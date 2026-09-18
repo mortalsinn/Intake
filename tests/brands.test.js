@@ -117,3 +117,45 @@ test('a brand config Zoho would refuse is caught here, not at the booth', () => 
         assert.doesNotMatch(JSON.stringify(rec), /[\u{1F300}-\u{1FAFF}]/u, `${name}: Zoho renders emoji as "?"`);
     }
 });
+
+test('a follow-up field is a REAL field, so its answer reaches the CRM', () => {
+    // The Zoho note, the CSV export and the server's validation all walk
+    // config.fields. An "Other" box bolted onto the pill it belongs to
+    // would be captured on the iPad and reach none of them.
+    const conditionals = ribit.fields.filter(f => f.showWhen);
+    assert.ok(conditionals.length, 'the Ribit form should have follow-up fields');
+    for (const f of conditionals) {
+        assert.ok(f.crmLabel, `${f.id} needs a crmLabel or the note shows a raw id`);
+        const trigger = ribit.fields.find(t => t.id === f.showWhen.field);
+        assert.ok(trigger, `${f.id} points at a field that does not exist`);
+        const opts = trigger.options || (trigger.groups || []).flatMap(g => g.options);
+        for (const want of [].concat(f.showWhen.is)) {
+            assert.ok(opts.includes(want),
+                `${f.id} waits for "${want}", which ${trigger.id} never offers`);
+        }
+        assert.strictEqual(f.section, trigger.section,
+            `${f.id} must sit on the same step as ${trigger.id} or it can never be seen`);
+        assert.ok(!f.required, `${f.id} is conditional, so it must not be required`);
+    }
+});
+
+test('a follow-up answer is written into the note', () => {
+    const withOther = {
+        ...lead('ribit'),
+        fields: { firstName: 'Dana', lastName: 'Woo', role: 'Other', roleOther: 'Building official' },
+    };
+    const note = buildNote(withOther, ribit).Note_Content;
+    assert.match(note, /Building official/);
+});
+
+test('no form asks about a "building department" — Alberta has no such body', () => {
+    // Under the Safety Codes Act the municipality is the AUTHORITY HAVING
+    // JURISDICTION and the person who answers a code question is a SAFETY
+    // CODES OFFICER. Getting this wrong in front of builders reads as not
+    // knowing the industry.
+    for (const [name, c] of [['ironwood', ironwood], ['ribit', ribit]]) {
+        const text = JSON.stringify(c);
+        assert.doesNotMatch(text, /building department/i, `${name} says "building department"`);
+        assert.doesNotMatch(text, /code enforcement office/i, `${name} invents a body`);
+    }
+});

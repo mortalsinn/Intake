@@ -70,7 +70,7 @@
       "zoho": "Company",
       "autocapitalize": "words",
       "placeholder": "Enter your company name",
-      "hint": "Optional — leave blank if you work for yourself"
+      "hint": "Optional \u2014 leave blank if you work for yourself"
     },
     {
       "id": "contactPref",
@@ -79,7 +79,10 @@
       "crmLabel": "Prefers",
       "type": "multi",
       "required": true,
-      "options": ["Phone call", "Email"],
+      "options": [
+        "Phone call",
+        "Email"
+      ],
       "hint": "Choose either or both"
     },
     {
@@ -92,7 +95,17 @@
       "zoho": "City",
       "autocapitalize": "words",
       "half": true,
-      "suggest": ["Calgary", "Airdrie", "Cochrane", "Okotoks", "Chestermere", "Strathmore", "Edmonton", "Red Deer", "Lethbridge"],
+      "suggest": [
+        "Calgary",
+        "Airdrie",
+        "Cochrane",
+        "Okotoks",
+        "Chestermere",
+        "Strathmore",
+        "Edmonton",
+        "Red Deer",
+        "Lethbridge"
+      ],
       "placeholder": "Enter your city or town"
     },
     {
@@ -124,6 +137,19 @@
       ]
     },
     {
+      "id": "roleOther",
+      "section": "Your work",
+      "label": "Tell us what you do",
+      "crmLabel": "Role \u2014 other",
+      "type": "text",
+      "showWhen": {
+        "field": "role",
+        "is": "Other"
+      },
+      "placeholder": "For example: building official, supplier, student",
+      "autocapitalize": "sentences"
+    },
+    {
       "id": "trades",
       "section": "Your work",
       "label": "Which work do you deal with the code on?",
@@ -132,18 +158,45 @@
       "groups": [
         {
           "label": "Structure & envelope",
-          "options": ["Framing", "Foundations", "Roofing", "Windows & doors", "Insulation & vapour"]
+          "options": [
+            "Framing",
+            "Foundations",
+            "Roofing",
+            "Windows & doors",
+            "Insulation & vapour"
+          ]
         },
         {
           "label": "Life safety",
-          "options": ["Stairs & guards", "Egress & exiting", "Fire separations", "Smoke & CO alarms", "Barrier-free"]
+          "options": [
+            "Stairs & guards",
+            "Egress & exiting",
+            "Fire separations",
+            "Smoke & CO alarms",
+            "Barrier-free"
+          ]
         },
         {
           "label": "Systems",
-          "options": ["Plumbing", "Electrical", "HVAC & ventilation", "Energy code"]
+          "options": [
+            "Plumbing",
+            "Electrical",
+            "HVAC & ventilation",
+            "Energy code"
+          ]
+        },
+        {
+          "label": "Interior finishing",
+          "options": [
+            "Drywall & boarding",
+            "Taping & mudding",
+            "Interior finish & trim",
+            "Flooring",
+            "Painting & coatings"
+          ]
         }
       ],
-      "hint": "Pick as many as apply — this tunes the demo to your work"
+      "hint": "Pick as many as apply \u2014 this tunes the demo to your work"
     },
     {
       "id": "jurisdictions",
@@ -151,8 +204,17 @@
       "label": "Which codes do you work under?",
       "crmLabel": "Jurisdictions",
       "type": "multi",
-      "options": ["Alberta", "British Columbia", "Ontario", "Quebec", "Saskatchewan", "Manitoba", "Atlantic Canada", "National (NBC)"],
-      "hint": "Alberta is loaded in full today — tell us which you need next"
+      "options": [
+        "Alberta",
+        "British Columbia",
+        "Ontario",
+        "Quebec",
+        "Saskatchewan",
+        "Manitoba",
+        "Atlantic Canada",
+        "National (NBC)"
+      ],
+      "hint": "Alberta is loaded in full today \u2014 tell us which you need next"
     },
     {
       "id": "teamSize",
@@ -160,7 +222,13 @@
       "label": "How many people would use it?",
       "crmLabel": "Team size",
       "type": "choice",
-      "options": ["Just me", "2 – 5", "6 – 20", "21 – 50", "More than 50"]
+      "options": [
+        "Just me",
+        "2 \u2013 5",
+        "6 \u2013 20",
+        "21 \u2013 50",
+        "More than 50"
+      ]
     },
     {
       "id": "lookupToday",
@@ -171,11 +239,26 @@
       "options": [
         "Paper code book",
         "PDF search",
-        "Calling the building department",
+        "Asking a safety codes officer",
         "Asking a colleague",
         "Guessing and correcting later",
-        "Another software tool"
-      ]
+        "Another software tool",
+        "Other"
+      ],
+      "hint": "Whatever you actually do \u2014 most people use more than one"
+    },
+    {
+      "id": "lookupTodayOther",
+      "section": "Your work",
+      "label": "How else do you look it up?",
+      "crmLabel": "Looks it up by \u2014 other",
+      "type": "text",
+      "showWhen": {
+        "field": "lookupToday",
+        "is": "Other"
+      },
+      "placeholder": "For example: an in-house binder, a consultant",
+      "autocapitalize": "sentences"
     },
     {
       "id": "interests",
@@ -186,11 +269,21 @@
       "groups": [
         {
           "label": "Code Compass",
-          "options": ["Plain-question code search", "Cited answers", "Multi-province codes", "STANDATA variations"]
+          "options": [
+            "Plain-question code search",
+            "Cited answers",
+            "Multi-province codes",
+            "STANDATA variations"
+          ]
         },
         {
           "label": "The wider platform",
-          "options": ["Estimating & quoting", "Site photo inspection", "Tender & bid review", "Project tracking"]
+          "options": [
+            "Estimating & quoting",
+            "Site photo inspection",
+            "Tender & bid review",
+            "Project tracking"
+          ]
         }
       ]
     },
@@ -200,7 +293,7 @@
       "label": "What does a code question cost you today?",
       "crmLabel": "Biggest problem",
       "type": "textarea",
-      "placeholder": "The last time you had to stop and look something up — what happened, and how long did it take?"
+      "placeholder": "The last time you had to stop and look something up \u2014 what happened, and how long did it take?"
     },
     {
       "id": "timeline",
@@ -208,7 +301,12 @@
       "label": "When would you want to start?",
       "crmLabel": "Timeline",
       "type": "choice",
-      "options": ["Straight away", "Within 1-3 months", "Within 3-6 months", "Just researching"]
+      "options": [
+        "Straight away",
+        "Within 1-3 months",
+        "Within 3-6 months",
+        "Just researching"
+      ]
     },
     {
       "id": "notes",
@@ -223,7 +321,7 @@
       "section": "Additional information",
       "label": "I agree that Ribit may contact me about my demo request by phone, text or email, and may send me occasional information about their products and services.",
       "type": "consent",
-      "hint": "Optional — we can still arrange your demo either way"
+      "hint": "Optional \u2014 we can still arrange your demo either way"
     }
   ],
   "company": {
@@ -232,5 +330,5 @@
     "phone": "(403) 552-1007",
     "email": "hello@ribitos.com"
   },
-  "consentFinePrint": "Ribit, 108-239 Mayland Pl NE, Calgary, AB T2E 7Z8 · (403) 552-1007. You may withdraw your consent at any time by contacting us, or by using the unsubscribe link in any message we send."
+  "consentFinePrint": "Ribit, 108-239 Mayland Pl NE, Calgary, AB T2E 7Z8 \u00b7 (403) 552-1007. You may withdraw your consent at any time by contacting us, or by using the unsubscribe link in any message we send."
 }

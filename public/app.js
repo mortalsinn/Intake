@@ -313,6 +313,7 @@
                             b.classList.toggle('on');
                         }
                         wrap.classList.remove('invalid');
+                        paintConditionals();
                     });
                     pills.appendChild(b);
                 }
@@ -465,6 +466,62 @@
         showStep(0);
     }
 
+    // ---------- conditional fields ----------
+
+    /**
+     * Is this field showing, given what has been answered so far?
+     *
+     * A field with `showWhen` only appears once its trigger is chosen —
+     * which is how "Other" gets somewhere to say what it means. The
+     * follow-up is a REAL field in the spec rather than something bolted
+     * onto the pill it belongs to, and that matters: the Zoho note, the CSV
+     * export and the server's validation all walk config.fields, so an
+     * answer that is not a field in there reaches none of them.
+     */
+    function fieldIsVisible(field) {
+        const cond = field.showWhen;
+        if (!cond) return true;
+        const v = state[cond.field];
+        const wanted = [].concat(cond.is ?? []);
+        return Array.isArray(v)
+            ? wanted.some(x => v.includes(x))       // one of a multi-select
+            : wanted.includes(v);
+    }
+
+    /**
+     * Re-evaluate the follow-ups after an answer changes.
+     *
+     * A follow-up that stops applying is emptied as well as hidden: a
+     * visitor who typed under "Other" and then changed their mind must not
+     * have that text submitted with an answer it no longer belongs to.
+     */
+    function paintConditionals() {
+        for (const field of config.fields) {
+            if (!field.showWhen) continue;
+            const el = form.querySelector(`.field[data-id="${field.id}"]`);
+            if (!el) continue;
+            const show = fieldIsVisible(field);
+            const onThisStep = field.section === stepNames[currentStep];
+            if (!show && state[field.id] !== undefined) {
+                delete state[field.id];
+                const input = el.querySelector('input, textarea');
+                if (input) input.value = '';
+                el.classList.remove('invalid');
+            }
+            const shouldShow = show && onThisStep;
+            if (el.hidden === !shouldShow) continue;      // nothing to do
+            el.hidden = !shouldShow;
+            // Expanding rather than appearing: the field belongs to the
+            // answer above it, and a box that unfolds from it says so.
+            if (shouldShow) {
+                el.classList.remove('is-folding');
+                el.classList.add('is-unfolding');
+                setTimeout(() => el.classList.remove('is-unfolding'), 420);
+                el.querySelector('input, textarea')?.focus({ preventScroll: true });
+            }
+        }
+    }
+
     // ---------- steps ----------
 
     // Twelve questions in one column reads as an endless list however well it
@@ -503,7 +560,10 @@
                 ? el.dataset.section
                 : (config.fields.find(f => f.id === el.dataset.id) || {}).section;
             // Section headings are redundant once the step itself is titled.
-            el.hidden = el.classList.contains('section-head') || owner !== name;
+            const field = config.fields.find(f => f.id === el.dataset.id);
+            el.hidden = el.classList.contains('section-head')
+                || owner !== name
+                || (field && !fieldIsVisible(field));
             if (!el.hidden) el.style.setProperty('--i', shown++);
         }
 
@@ -528,7 +588,8 @@
 
     /** Only the fields on this step — a visitor must not be told about
      *  something they have not been shown yet. */
-    const fieldsOnStep = () => config.fields.filter(f => f.section === stepNames[currentStep]);
+    const fieldsOnStep = () => config.fields
+        .filter(f => f.section === stepNames[currentStep] && fieldIsVisible(f));
 
     // Arming, as on "Start over": one stray tap must not throw away what a
     // visitor has typed, but a modal at a busy booth is worse than the risk.
@@ -593,6 +654,8 @@
         let ok = true;
         let firstBad = null;
         for (const field of fields) {
+            // Never fault a visitor for a field they were never shown.
+            if (!fieldIsVisible(field)) continue;
             const v = state[field.id];
             const has = Array.isArray(v) ? v.length > 0 : v === true || (v != null && String(v).trim() !== '');
             const problem = fieldProblem(field, v, has);

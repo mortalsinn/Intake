@@ -1384,3 +1384,26 @@ button.attract-cta:active { transform: scale(0.97); }
     scroll-behavior: auto !important;
   }
 }
+
+/* ---- a follow-up that unfolds from the answer above it ----
+   Shown when an option like "Other" is chosen. It expands rather than
+   appearing, because it belongs to the pill that opened it and a box that
+   simply materialises reads as a different question. grid-template-rows
+   0fr -> 1fr is the one way to animate to a height nobody has measured. */
+.field.is-unfolding {
+  display: grid;
+  grid-template-rows: 0fr;
+  animation: unfold 0.38s var(--ease-out) forwards;
+}
+.field.is-unfolding > * { overflow: hidden; }
+@keyframes unfold {
+  from { grid-template-rows: 0fr; opacity: 0; transform: translate3d(0, -6px, 0); }
+  to   { grid-template-rows: 1fr; opacity: 1; transform: none; }
+}
+/* A follow-up is subordinate to the question that opened it, and is
+   indented and ruled to say so rather than sitting as a peer. */
+.field[data-id$="Other"] {
+  border-left: 3px solid var(--bronze);
+  padding-left: 16px;
+  margin-top: -8px;
+}

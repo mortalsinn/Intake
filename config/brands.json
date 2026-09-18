@@ -18,11 +18,6 @@
         {
           "label": "Tell us about your project",
           "kind": "enquiry"
-        },
-        {
-          "label": "Enter the draw",
-          "kind": "contest",
-          "secondary": true
         }
       ],
       "cardLogo": "logo-mark.png",

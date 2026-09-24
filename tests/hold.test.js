@@ -23,9 +23,9 @@ const ms = (name) => {
 };
 
 test('the hold outlasts the longest flow the kiosk can run before the priority tap', () => {
-    const longest = ms('QR_BAIL_MS') + ms('THANKS_BAIL_MS') + ms('STAFF_BAIL_MS');
+    const longest = ms('QR_BAIL_MS') + ms('THANKS_BAIL_MS') + ms('STAFF_DELAY_MS') + ms('STAFF_BAIL_MS');
     assert.ok(HOLD_MS > longest,
-        `hold ${HOLD_MS / 1000}s must exceed QR + thank you + staff step (${longest / 1000}s)`);
+        `hold ${HOLD_MS / 1000}s must exceed QR + thank you + hand-back + staff step (${longest / 1000}s)`);
 });
 
 test('a new lead is held, and released the moment the kiosk lets go', () => {

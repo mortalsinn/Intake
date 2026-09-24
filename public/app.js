@@ -942,6 +942,11 @@
     // in lib/store.js), or a lead could be sent before staff can rate it.
     // tests/hold.test.js reads these numbers and fails if they do not fit.
     const STAFF_BAIL_MS = 25 * 1000;
+    // The pause between the visitor's last tap and the staff rating. The
+    // visitor taps "continue" on the thank-you and is still holding the
+    // iPad; showing the rating that instant let them watch themselves being
+    // ranked. Three seconds is the hand-back.
+    const STAFF_DELAY_MS = 3 * 1000;
 
     /**
      * Tell the server this lead is finished with, so it stops waiting for a
@@ -990,7 +995,14 @@
         const done = () => {
             clearTimeout(bail);
             panel.onclick = null;
-            conceal(panel, () => askPriority(leadId, who));
+            // The thank-you stays up through the hand-back, with nothing left
+            // on it to tap — so it reads as finished, not as stuck.
+            const hint = panel.querySelector('.thanks-reset');
+            if (hint) hint.style.visibility = 'hidden';
+            setTimeout(() => conceal(panel, () => {
+                if (hint) hint.style.visibility = '';
+                askPriority(leadId, who);
+            }), STAFF_DELAY_MS);
         };
         const bail = setTimeout(() => {
             clearTimeout(bail);

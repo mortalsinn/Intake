@@ -6,6 +6,32 @@
     const $ = (sel) => document.querySelector(sel);
     let pin = sessionStorage.getItem('iw_admin_pin') || '';
 
+    /**
+     * Sign out and hand the iPad back to the kiosk.
+     *
+     * The PIN is remembered for the session, and on a shared booth iPad
+     * the session outlives the staff member: the next visitor who tapped
+     * "Staff login" would have walked straight in to every customer's name,
+     * phone number and email. Leaving always signs out.
+     */
+    function signOutToKiosk() {
+        sessionStorage.removeItem('iw_admin_pin');
+        pin = '';
+        location.href = './';
+    }
+    $('#admin-back')?.addEventListener('click', (e) => { e.preventDefault(); signOutToKiosk(); });
+
+    // Nobody touching the admin page for two minutes means nobody is at it.
+    // Customer details must not sit on an unattended screen at a booth.
+    const ADMIN_IDLE_MS = 2 * 60 * 1000;
+    let adminIdle = setTimeout(signOutToKiosk, ADMIN_IDLE_MS);
+    for (const ev of ['pointerdown', 'keydown', 'scroll', 'touchstart']) {
+        document.addEventListener(ev, () => {
+            clearTimeout(adminIdle);
+            adminIdle = setTimeout(signOutToKiosk, ADMIN_IDLE_MS);
+        }, { passive: true, capture: true });
+    }
+
     const api = (path, opts = {}) => fetch(path, {
         ...opts,
         headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin, ...(opts.headers || {}) },

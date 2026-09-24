@@ -1407,3 +1407,32 @@ button.attract-cta:active { transform: scale(0.97); }
   padding-left: 16px;
   margin-top: -8px;
 }
+
+/* ---- the staff entrance on the chooser ---- */
+.splash-staff {
+  position: fixed;
+  right: 18px;
+  bottom: 16px;
+  padding: 10px 14px;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.34);
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+}
+.splash-staff:active { color: #fff; border-color: rgba(255, 255, 255, 0.4); }
+
+/* ---- the way back from admin ---- */
+.admin-back {
+  display: inline-block;
+  margin: 0 0 12px;
+  padding: 10px 16px;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 15px;
+  text-decoration: none;
+}

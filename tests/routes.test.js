@@ -147,6 +147,16 @@ test('a Code Compass lead is held for email and never queued for the CRM', async
     assert.ok(s.mail.pending >= 1, 'held on disk until it can be emailed');
 });
 
+test('start fresh needs the typed phrase as well as the PIN', async () => {
+    const no = await json('/api/admin/archive', { confirm: 'yes' }, PIN);
+    assert.strictEqual(no.status, 400, 'a stray tap cannot empty the page');
+    const before = (await (await json('/api/admin/status', undefined, PIN)).json()).leads.length;
+    assert.ok(before > 0);
+    const ok = await (await json('/api/admin/archive', { confirm: 'START FRESH' }, PIN)).json();
+    assert.strictEqual(ok.leads, before);
+    assert.strictEqual((await (await json('/api/admin/status', undefined, PIN)).json()).leads.length, 0);
+});
+
 test('a wrong PIN is refused, and repeated wrong PINs lock the address out', async () => {
     assert.equal((await json('/api/admin/status', undefined, { 'x-admin-pin': '1' })).status, 401);
     let last;

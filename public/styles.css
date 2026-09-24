@@ -410,7 +410,6 @@ button.submit::after {
   background:
     radial-gradient(1100px 600px at 50% -10%, #2c3a48 0%, var(--navy) 55%, var(--night) 100%)
     var(--night);
-  animation: fadeIn 0.5s;
 }
 @keyframes fadeIn { from { opacity: 0; } }
 .attract-inner {
@@ -1436,3 +1435,13 @@ button.attract-cta:active { transform: scale(0.97); }
   font-size: 15px;
   text-decoration: none;
 }
+
+/* The two full-screen, opaque panels — the chooser and a brand's welcome —
+   never fade as a whole. Swapping one for the other faded the outgoing
+   screen out while the incoming one faded in from transparent, and for
+   that moment both were see-through: the form behind them flashed across
+   the Ironwood welcome. They now arrive solid, and only their contents
+   animate. The attract screen's old base fade had the same flaw, and
+   would also have replayed the moment `.is-in` came off, so it is gone. */
+.splash.is-in,
+.attract.is-in { animation: none; }

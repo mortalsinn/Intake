@@ -456,6 +456,20 @@ app.get('/api/admin/audit', requirePin, async (req, res) => {
     res.json(out);
 });
 
+/**
+ * Start fresh for a new show. Archives, never deletes (see store.archiveAll),
+ * and demands a typed phrase as well as the PIN: this empties the page the
+ * booth depends on, so it must not be one stray tap.
+ */
+app.post('/api/admin/archive', requirePin, (req, res) => {
+    if (req.body?.confirm !== 'START FRESH') {
+        return res.status(400).json({ error: 'Type START FRESH to confirm.' });
+    }
+    const summary = store.archiveAll();
+    console.log(`[admin] started fresh — ${summary.leads} lead(s) archived to ${summary.archivedTo}`);
+    res.json({ ok: true, ...summary });
+});
+
 /** Pull back anything the journal has that the working file lost. */
 app.post('/api/admin/restore', requirePin, (req, res) => {
     const n = store.restoreFromJournal();

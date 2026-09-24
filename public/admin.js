@@ -346,6 +346,52 @@
     });
     paintDeviceCount();
 
+    /**
+     * Start fresh. Two deliberate acts, not one tap: a typed phrase, which
+     * the server checks again. The server archives rather than deletes.
+     *
+     * On the iPad that did the capturing, its own copy is filed under a
+     * dated key rather than cleared — and the QUEUE is never touched: an
+     * entry still waiting to reach the server is a real lead, not a test.
+     */
+    $('#btn-fresh').addEventListener('click', async () => {
+        const msg = $('#fresh-msg');
+        const typed = prompt('This empties the admin page to zero. Nothing is deleted — it is all moved to an archive folder.\n\nType START FRESH to continue.');
+        if (typed === null) return;
+        if (typed.trim() !== 'START FRESH') {
+            msg.className = 'msg bad';
+            msg.textContent = 'Not started — the phrase did not match.';
+            return;
+        }
+        msg.className = 'msg';
+        msg.textContent = 'Archiving…';
+        try {
+            const res = await api('/api/admin/archive', { method: 'POST', body: JSON.stringify({ confirm: 'START FRESH' }) });
+            const r = await res.json();
+            if (!res.ok) throw new Error(r.error || 'The server refused.');
+            let device = '';
+            try {
+                const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+                for (const key of ['iw_intake_archive_v1', 'iw_intake_dead_v1']) {
+                    const v = localStorage.getItem(key);
+                    if (v && v !== '[]') {
+                        localStorage.setItem(`${key}__archived_${stamp}`, v);
+                        localStorage.removeItem(key);
+                    }
+                }
+                const queued = JSON.parse(localStorage.getItem('iw_intake_queue_v1') || '[]').length;
+                device = queued ? ` ${queued} entr${queued === 1 ? 'y is' : 'ies are'} still waiting to send from this iPad and were left alone.` : '';
+            } catch { /* not the booth iPad, or storage unavailable */ }
+            msg.className = 'msg ok';
+            msg.textContent = `Done. ${r.leads} lead(s) moved to ${r.archivedTo} on the server — nothing deleted.${device}`;
+            paintDeviceCount();
+            refresh();
+        } catch (err) {
+            msg.className = 'msg bad';
+            msg.textContent = `Not started: ${err.message}`;
+        }
+    });
+
     if (pin) refresh(); else $('#pin-gate').hidden = false;
     setInterval(() => { if (!$('#panel').hidden) refresh(); }, 10 * 1000);
 })();

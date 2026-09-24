@@ -100,3 +100,29 @@ test('the journal keeps the record even after a lead is deleted from the working
     store.updateLead('a', { status: 'synced', leadId: 'z1' });
     assert.equal(store.getJournal().length, 1, 'journalled once, unchanged by later edits');
 });
+
+test('starting fresh ARCHIVES everything — nothing is destroyed', () => {
+    const dir = tmp();
+    const store = createStore(dir);
+    store.addLead(lead('a', 'One'));
+    store.addLead(lead('b', 'Two'));
+    fs.writeFileSync(path.join(dir, 'zoho.json'), '{"clientId":"keep-me"}');
+
+    const r = store.archiveAll();
+    assert.strictEqual(r.leads, 2);
+    assert.strictEqual(store.getLeads().length, 0, 'the admin page starts at zero');
+    assert.strictEqual(store.getJournal().length, 0, 'and so does the backup it checks against');
+
+    const saved = path.join(dir, r.archivedTo);
+    const kept = JSON.parse(fs.readFileSync(path.join(saved, 'leads.json'), 'utf8'));
+    assert.deepStrictEqual(kept.map(l => l.id).sort(), ['a', 'b'], 'every lead is still on disk');
+    assert.strictEqual(fs.readFileSync(path.join(saved, 'journal.jsonl'), 'utf8').trim().split('\n').length, 2);
+    assert.ok(fs.existsSync(path.join(dir, 'zoho.json')), 'the Zoho connection is untouched');
+
+    // A restart must not resurrect the archived leads from the old journal.
+    const reopened = createStore(dir);
+    assert.strictEqual(reopened.getLeads().length, 0);
+    reopened.addLead(lead('c', 'Three'));
+    assert.strictEqual(reopened.getLeads().length, 1, 'the next show captures normally');
+    assert.strictEqual(reopened.auditJournal().missing.length, 0, '"Check nothing lost" is clean');
+});

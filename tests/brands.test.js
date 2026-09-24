@@ -169,3 +169,13 @@ test('no form asks about a "building department" — Alberta has no such body', 
         assert.doesNotMatch(text, /code enforcement office/i, `${name} invents a body`);
     }
 });
+
+test('the Code Compass form offers only what is public', () => {
+    // Estimating, photo inspection, tender review and project tracking are
+    // not released. Offering them at the booth promised a product nobody
+    // could be shown.
+    const text = JSON.stringify(ribit).toLowerCase();
+    for (const unreleased of ['wider platform', 'estimating', 'photo inspection', 'tender', 'project tracking']) {
+        assert.ok(!text.includes(unreleased), `the Code Compass form mentions "${unreleased}"`);
+    }
+});

@@ -262,28 +262,14 @@
     {
       "id": "interests",
       "section": "What you need",
-      "label": "Which parts of Ribit interest you?",
+      "label": "Which parts of Code Compass interest you?",
       "crmLabel": "Interested in",
       "type": "multi",
-      "groups": [
-        {
-          "label": "Code Compass",
-          "options": [
-            "Plain-question code search",
-            "Cited answers",
-            "Multi-province codes",
-            "STANDATA variations"
-          ]
-        },
-        {
-          "label": "The wider platform",
-          "options": [
-            "Estimating & quoting",
-            "Site photo inspection",
-            "Tender & bid review",
-            "Project tracking"
-          ]
-        }
+      "options": [
+        "Plain-question code search",
+        "Cited answers",
+        "Multi-province codes",
+        "STANDATA variations"
       ]
     },
     {

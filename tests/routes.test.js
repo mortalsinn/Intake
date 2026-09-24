@@ -135,6 +135,18 @@ test('the upload page names the right company for the lead', async () => {
     assert.equal((await json('/u/not-a-token/info')).status, 404);
 });
 
+test('a Code Compass lead is held for email and never queued for the CRM', async () => {
+    await json('/api/leads', lead('ribit', 'r-mail-1'));
+    const { pushPending } = require('../server');
+    await pushPending();
+    const s = await (await json('/api/admin/status', undefined, PIN)).json();
+    const l = s.leads.find(x => x.id === 'r-mail-1');
+    assert.strictEqual(l.zoho.status === 'synced', false, 'must never reach the CRM');
+    assert.strictEqual(s.mail.to, 'info@ribitos.com');
+    assert.strictEqual(s.mail.configured, false, 'demo mode sends nothing');
+    assert.ok(s.mail.pending >= 1, 'held on disk until it can be emailed');
+});
+
 test('a wrong PIN is refused, and repeated wrong PINs lock the address out', async () => {
     assert.equal((await json('/api/admin/status', undefined, { 'x-admin-pin': '1' })).status, 401);
     let last;

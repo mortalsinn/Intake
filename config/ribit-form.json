@@ -1,7 +1,6 @@
 {
   "show": {
     "name": "Fall Home Show 2026",
-    "leadSource": "Fall Home Show 2026 - Code Compass",
     "submitLabel": "Request my demo",
     "timeZone": "America/Edmonton",
     "headline": "Let's book your demo",
@@ -70,7 +69,7 @@
       "zoho": "Company",
       "autocapitalize": "words",
       "placeholder": "Enter your company name",
-      "hint": "Optional \u2014 leave blank if you work for yourself"
+      "hint": "Optional — leave blank if you work for yourself"
     },
     {
       "id": "contactPref",
@@ -140,7 +139,7 @@
       "id": "roleOther",
       "section": "Your work",
       "label": "Tell us what you do",
-      "crmLabel": "Role \u2014 other",
+      "crmLabel": "Role — other",
       "type": "text",
       "showWhen": {
         "field": "role",
@@ -196,7 +195,7 @@
           ]
         }
       ],
-      "hint": "Pick as many as apply \u2014 this tunes the demo to your work"
+      "hint": "Pick as many as apply — this tunes the demo to your work"
     },
     {
       "id": "jurisdictions",
@@ -214,7 +213,7 @@
         "Atlantic Canada",
         "National (NBC)"
       ],
-      "hint": "Alberta is loaded in full today \u2014 tell us which you need next"
+      "hint": "Alberta is loaded in full today — tell us which you need next"
     },
     {
       "id": "teamSize",
@@ -224,9 +223,9 @@
       "type": "choice",
       "options": [
         "Just me",
-        "2 \u2013 5",
-        "6 \u2013 20",
-        "21 \u2013 50",
+        "2 – 5",
+        "6 – 20",
+        "21 – 50",
         "More than 50"
       ]
     },
@@ -245,13 +244,13 @@
         "Another software tool",
         "Other"
       ],
-      "hint": "Whatever you actually do \u2014 most people use more than one"
+      "hint": "Whatever you actually do — most people use more than one"
     },
     {
       "id": "lookupTodayOther",
       "section": "Your work",
       "label": "How else do you look it up?",
-      "crmLabel": "Looks it up by \u2014 other",
+      "crmLabel": "Looks it up by — other",
       "type": "text",
       "showWhen": {
         "field": "lookupToday",
@@ -293,7 +292,7 @@
       "label": "What does a code question cost you today?",
       "crmLabel": "Biggest problem",
       "type": "textarea",
-      "placeholder": "The last time you had to stop and look something up \u2014 what happened, and how long did it take?"
+      "placeholder": "The last time you had to stop and look something up — what happened, and how long did it take?"
     },
     {
       "id": "timeline",
@@ -321,7 +320,7 @@
       "section": "Additional information",
       "label": "I agree that Ribit may contact me about my demo request by phone, text or email, and may send me occasional information about their products and services.",
       "type": "consent",
-      "hint": "Optional \u2014 we can still arrange your demo either way"
+      "hint": "Optional — we can still arrange your demo either way"
     }
   ],
   "company": {
@@ -330,5 +329,5 @@
     "phone": "(403) 552-1007",
     "email": "hello@ribitos.com"
   },
-  "consentFinePrint": "Ribit, 108-239 Mayland Pl NE, Calgary, AB T2E 7Z8 \u00b7 (403) 552-1007. You may withdraw your consent at any time by contacting us, or by using the unsubscribe link in any message we send."
+  "consentFinePrint": "Ribit, 108-239 Mayland Pl NE, Calgary, AB T2E 7Z8 · (403) 552-1007. You may withdraw your consent at any time by contacting us, or by using the unsubscribe link in any message we send."
 }

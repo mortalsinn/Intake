@@ -32,12 +32,22 @@ const lead = (kind) => ({
     fields: { firstName: 'Dana', lastName: 'Woo', phone: '(403) 555-0188', email: 'd@e.com', consent: true },
 });
 
-test('the two brands file under DIFFERENT Lead Sources', () => {
-    const a = buildLeadRecord(lead('enquiry'), ironwood, {}).Lead_Source;
-    const b = buildLeadRecord(lead('ribit'), ribit, {}).Lead_Source;
-    assert.ok(a, 'Ironwood must have a Lead_Source');
-    assert.ok(b, 'Ribit must have a Lead_Source');
-    assert.notStrictEqual(a, b, 'a shared Lead_Source makes the two booths one list');
+test('Ironwood leads land in the first column, tagged with the show', () => {
+    // Not a status column made for one weekend: the ordinary first column,
+    // found by searching the tag.
+    const rec = buildLeadRecord(lead('enquiry'), ironwood, {});
+    assert.strictEqual(rec.Lead_Status, 'Contact in Future');
+    assert.deepStrictEqual(ironwood.show.tags, ['Fall Home Show 2026']);
+});
+
+test('Code Compass carries nothing that could file it in the CRM', () => {
+    // Code Compass leads are emailed to info@ribitos.com and never enter the
+    // CRM. A spec with a Lead Source or an owner is one config slip from
+    // filing them there again.
+    assert.strictEqual(ribit.show.leadSource, undefined);
+    assert.strictEqual(ribit.show.leadStatus, undefined);
+    assert.strictEqual(ribit.show.leadOwner, undefined);
+    assert.strictEqual(ribit.show.tags, undefined);
 });
 
 test('a Ribit lead never carries Ironwood wording or its lead owner', () => {

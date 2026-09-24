@@ -22,6 +22,7 @@ const { createStore } = require('./lib/store');
 const { safeEqual, rateLimiter, lockout } = require('./lib/guard');
 const { validateLead } = require('./lib/validate');
 const zoho = require('./lib/zoho');
+const mail = require('./lib/mail');
 
 const PORT = Number(process.env.PORT) || 3100;
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
@@ -63,9 +64,12 @@ const clientIp = (req) =>
 // Ironwood railing enquiry. 'kind' already threads through the store, the
 // CSV export and the Zoho push, so a brand is one more kind.
 const CONFIGS = { enquiry: 'form.json', contest: 'contest.json', ribit: 'ribit-form.json' };
-// Which kinds the CRM should receive. A prize draw entrant has not asked for
-// anything; everyone else has.
-const CRM_KINDS = new Set(['enquiry', 'ribit']);
+// Where each kind is delivered. Ironwood enquiries go to the CRM. Code
+// Compass demo requests never enter the CRM — they are emailed to our own
+// inbox (lib/mail.js). A prize draw entrant has asked for nothing, and
+// goes nowhere but the disk and its CSV.
+const CRM_KINDS = new Set(['enquiry']);
+const MAIL_KINDS = new Set(['ribit']);
 const isKind = (k) => Object.prototype.hasOwnProperty.call(CONFIGS, k);
 const formConfig = (kind = 'enquiry') =>
     JSON.parse(fs.readFileSync(path.join(__dirname, 'config', CONFIGS[isKind(kind) ? kind : 'enquiry']), 'utf8'));
@@ -126,6 +130,11 @@ app.get('/api/status', (req, res) => {
         zohoPhotos: z ? (zoho.canWriteAttachments(z) && !attachmentScopeProblem) : false,
         counts: store.counts(),
         photos: store.photoCounts(),
+        mail: {
+            configured: mail.canSend() && !store.isDemo(),
+            to: mail.mailConfig().to,
+            ...store.mailCounts(MAIL_KINDS),
+        },
     });
 });
 
@@ -168,7 +177,7 @@ app.post('/api/leads', (req, res) => {
     // buyer for pictures of their project.
     const uploadUrl = cfg.photos === false ? null : uploadPath(req, uploadToken);
     res.json({ ok: true, duplicate: !added, uploadUrl });
-    if (added) setImmediate(pushPending);
+    if (added) { setImmediate(pushPending); setImmediate(pushMail); }
 });
 
 /**
@@ -187,6 +196,7 @@ app.post('/api/leads/:id/priority', (req, res) => {
     store.releaseHold(req.params.id);
     res.json({ ok: true });
     setImmediate(pushPending);
+    setImmediate(pushMail);
 });
 
 // The address a customer's phone must reach. Behind Render's proxy the
@@ -317,6 +327,11 @@ app.get('/api/admin/status', requirePin, (req, res) => {
         } : { connected: false, requiredScope: zoho.REQUIRED_SCOPE },
         counts: store.counts(),
         photos: store.photoCounts(),
+        mail: {
+            configured: mail.canSend() && !store.isDemo(),
+            to: mail.mailConfig().to,
+            ...store.mailCounts(MAIL_KINDS),
+        },
         leads: store.getLeads().slice().reverse(),
         contestCount: store.getLeads().filter(l => l.kind === 'contest').length,
     });
@@ -446,6 +461,7 @@ app.post('/api/admin/retry', requirePin, (req, res) => {
     const n = store.retry(req.body?.id);
     setImmediate(pushPending);
     setImmediate(pushPhotos);
+    setImmediate(pushMail);
     res.json({ ok: true, retried: n });
 });
 
@@ -460,9 +476,12 @@ app.get('/api/admin/export.csv', requirePin, (req, res) => {
     // so those columns would be dead weight in a list somebody is going to
     // pull a winner out of.
     const isContest = kind === 'contest';
+    const isMail = MAIL_KINDS.has(kind);
     const header = isContest
         ? ['enteredAt', ...cfg.fields.map(f => f.id)]
-        : ['receivedAt', 'boothRating', ...cfg.fields.map(f => f.id), 'photos', 'zohoStatus', 'zohoLeadId', 'zohoError'];
+        : isMail
+            ? ['receivedAt', 'boothRating', ...cfg.fields.map(f => f.id), 'emailStatus', 'emailedAt', 'emailError']
+            : ['receivedAt', 'boothRating', ...cfg.fields.map(f => f.id), 'photos', 'zohoStatus', 'zohoLeadId', 'zohoError'];
 
     const answers = (l) => cfg.fields.map(f => {
         const v = l.fields[f.id];
@@ -471,6 +490,9 @@ app.get('/api/admin/export.csv', requirePin, (req, res) => {
 
     const rows = store.getLeads().filter(l => (l.kind || 'enquiry') === kind).map(l => isContest
         ? [l.receivedAt, ...answers(l)]
+        : isMail
+        ? [l.receivedAt, l.fields._boothRating || '', ...answers(l),
+            l.mail?.status || 'pending', l.mail?.sentAt || '', l.mail?.error || '']
         : [
             l.receivedAt,
             l.fields._boothRating || '',
@@ -543,10 +565,15 @@ async function pushPending() {
                     store.updateLead(lead.id, { leadId, droppedField: created.droppedField?.field });
                 }
 
-                let noteError;
-                if (notesOk) {
+                // Each part remembers that it landed. A retry for a failed
+                // tag must not post the note a second time, and the other way
+                // round — a duplicate note is the CRM equivalent of a
+                // customer being asked the same question twice.
+                let noteError, noteDone = !!lead.zoho.noteDone;
+                if (notesOk && !noteDone) {
                     try {
                         await zoho.createNote(cfg, leadId, zoho.buildNote(lead, formCfg));
+                        noteDone = true;
                     } catch (noteErr) {
                         noteError = noteErr.message;
                         if (noteErr.scopeProblem) noteScopeProblem = noteErr.message;
@@ -554,11 +581,26 @@ async function pushPending() {
                     }
                 }
 
+                // The show's tag is how its leads are found: they land in the
+                // ordinary first column and are searchable by tag, instead of
+                // being parked in a status column made for one weekend.
+                let tagError, tagsDone = !!lead.zoho.tagsDone;
+                const tags = formCfg.show.tags || [];
+                if (tags.length && !tagsDone) {
+                    try {
+                        await zoho.addTags(cfg, leadId, tags);
+                        tagsDone = true;
+                    } catch (tagErr) {
+                        tagError = tagErr.message;
+                        console.warn(`[zoho] lead ${leadId} created but tag failed: ${tagErr.message}`);
+                    }
+                }
+
                 store.updateLead(lead.id, {
                     status: 'synced', leadId, syncedAt: new Date().toISOString(),
-                    error: undefined, noteError,
+                    error: undefined, noteError, noteDone, tagError, tagsDone,
                 });
-                console.log(`[zoho] synced lead ${lead.id} → ${leadId}${noteError ? ' (note FAILED)' : ''}`);
+                console.log(`[zoho] synced lead ${lead.id} → ${leadId}${noteError ? ' (note FAILED)' : ''}${tagError ? ' (tag FAILED)' : ''}`);
             } catch (err) {
                 store.updateLead(lead.id, {
                     // Permanent = Zoho rejected the data; retrying identical data
@@ -573,6 +615,43 @@ async function pushPending() {
         }
     } finally {
         pushing = false;
+    }
+}
+
+/**
+ * Email waiting Code Compass leads to our own inbox.
+ *
+ * The same shape as the Zoho push: durable on disk first, delivered after,
+ * backed off when it fails, and never lost when it cannot be sent at all.
+ * Demo mode sends nothing, for the same reason it reaches no CRM.
+ */
+let mailing = false;
+async function pushMail() {
+    if (mailing || store.isDemo() || !mail.canSend()) return;
+    mailing = true;
+    try {
+        for (const lead of store.pendingMail(MAIL_KINDS)) {
+            const m = lead.mail || { attempts: 0 };
+            const wait = Math.min((m.attempts || 0) * 2, 15) * 60 * 1000;
+            if (m.lastTriedAt && Date.now() - Date.parse(m.lastTriedAt) < wait) continue;
+            try {
+                const cfg = formConfig(lead.kind);
+                const message = mail.buildLeadEmail(lead, cfg, zoho.buildNote(lead, cfg).Note_Content);
+                const sent = await mail.sendLeadEmail(message);
+                store.updateMail(lead.id, { status: 'sent', sentAt: new Date().toISOString(), id: sent.id, error: undefined });
+                console.log(`[mail] ${lead.kind} lead ${lead.id} emailed to ${sent.to}`);
+            } catch (err) {
+                store.updateMail(lead.id, {
+                    status: err.permanent ? 'failed' : 'pending',
+                    attempts: (m.attempts || 0) + 1,
+                    lastTriedAt: new Date().toISOString(),
+                    error: err.message,
+                });
+                console.warn(`[mail] lead ${lead.id} not sent: ${err.message}`);
+            }
+        }
+    } finally {
+        mailing = false;
     }
 }
 
@@ -714,6 +793,7 @@ async function pushPhotos() {
 if (require.main === module) {
     setInterval(pushPending, 15 * 1000);   // tighter than the hold, so a held lead moves promptly
     setInterval(pushPhotos, 60 * 1000);
+    setInterval(pushMail, 15 * 1000);
     app.listen(PORT, '0.0.0.0', () => {
         const nets = Object.values(os.networkInterfaces()).flat()
             .filter(n => n && n.family === 'IPv4' && !n.internal)
@@ -743,4 +823,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { app, pushPending };
+module.exports = { app, pushPending, pushMail };

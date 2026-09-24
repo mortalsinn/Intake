@@ -72,6 +72,16 @@
         if (s.zoho.requiredScope) $('#scope-str').textContent = s.zoho.requiredScope;
         const ribit = $('#c-ribit');
         if (ribit) ribit.textContent = s.counts?.byKind?.ribit?.total ?? 0;
+        // Code Compass leads are emailed, never sent to the CRM, so their
+        // health is the mailbox's health. Say plainly when they cannot go.
+        const m = s.mail || {};
+        const mailLine = $('#ribit-mail');
+        if (mailLine) {
+            mailLine.className = `badge ${!m.configured && m.pending ? 'bad' : m.failed ? 'bad' : m.pending ? 'warn' : 'ok'}`;
+            mailLine.textContent = !m.configured
+                ? `Email not set up — ${m.pending || 0} held securely for ${m.to || 'info@ribitos.com'}`
+                : `${m.sent || 0} emailed to ${m.to}${m.pending ? `, ${m.pending} waiting` : ''}${m.failed ? `, ${m.failed} refused` : ''}`;
+        }
 
         $('#rows').innerHTML = s.leads.filter(l => (l.kind || 'enquiry') !== 'contest').map(l => {
             const f = l.fields || {};
@@ -79,10 +89,20 @@
             const contact = [f.phone, f.email].filter(Boolean).join(' · ') || '—';
             const interests = Array.isArray(f.interests) ? f.interests.join(', ') : '';
             const z = l.zoho || {};
-            const badgeCls = z.status === 'synced' ? 'ok' : z.status === 'failed' ? 'bad' : 'warn';
-            const zText = z.status === 'synced' ? (z.noteError ? 'Recorded — note failed' : 'Recorded')
-                : z.status === 'failed' ? `Declined: ${z.error || ''}` : 'Awaiting transfer';
-            const retry = z.status === 'failed' ? `<button class="ghost" data-retry="${l.id}">Retry</button>` : '';
+            const emailed = (l.kind || 'enquiry') === 'ribit';
+            const ml = l.mail || { status: 'pending' };
+            // A Code Compass row reports its email; it never visits the CRM.
+            const badgeCls = emailed
+                ? (ml.status === 'sent' ? 'ok' : ml.status === 'failed' ? 'bad' : 'warn')
+                : (z.status === 'synced' ? ((z.noteError || z.tagError) ? 'warn' : 'ok') : z.status === 'failed' ? 'bad' : 'warn');
+            const zText = emailed
+                ? (ml.status === 'sent' ? 'Emailed' : ml.status === 'failed' ? `Email refused: ${ml.error || ''}` : 'Awaiting email')
+                : z.status === 'synced'
+                    ? (z.noteError ? 'Recorded — note failed' : z.tagError ? 'Recorded — tag failed' : 'Recorded')
+                    : z.status === 'failed' ? `Declined: ${z.error || ''}` : 'Awaiting transfer';
+            const failed = emailed ? ml.status === 'failed' : (z.status === 'failed' || z.noteError || z.tagError);
+            const retry = failed ? `<button class="ghost" data-retry="${l.id}">Retry</button>` : '';
+            const errText = emailed ? (ml.error || '') : (z.error || z.tagError || '');
             // Shorten the CRM-facing phrasing for the table column.
             const rating = (f._boothRating || '').replace(/\s*—.*$/, '');
             return `<tr>
@@ -91,7 +111,7 @@
               <td>${rating}</td>
               <td>${name}</td><td>${contact}</td><td>${interests}</td>
               <td>${photoCell(l)}</td>
-              <td><span class="badge ${badgeCls}" title="${z.error || ''}">${zText}</span></td>
+              <td><span class="badge ${badgeCls}" title="${errText}">${zText}</span></td>
               <td>${retry}</td></tr>`;
         }).join('') || '<tr><td colspan="9" style="color:#888">No enquiries recorded yet.</td></tr>';
         return true;

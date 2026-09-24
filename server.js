@@ -169,6 +169,11 @@ app.post('/api/leads', (req, res) => {
         fields: req.body.fields,
         kind,
     });
+    // A kind that never goes to the CRM is marked so at capture, not when
+    // the Zoho pusher next runs — the pusher does not run at all while Zoho
+    // is disconnected, and until then these leads were counted as "awaiting
+    // transfer to Zoho", a transfer that was never going to happen.
+    if (added && !CRM_KINDS.has(kind)) store.updateLead(req.body.id, { status: 'local' });
     // The disk write above is the durable receipt — respond now, push later.
     // Retries from the iPad land here again with the same id and dedupe.
     // uploadUrl comes back so the kiosk can show the customer a QR code.
@@ -194,6 +199,19 @@ app.post('/api/leads/:id/priority', (req, res) => {
     if (!lead) return res.status(404).json({ error: 'No such enquiry.' });
     // Priority is in; nothing left to wait for.
     store.releaseHold(req.params.id);
+    res.json({ ok: true });
+    setImmediate(pushPending);
+    setImmediate(pushMail);
+});
+
+/**
+ * The kiosk has finished with this lead without a priority — Skip, or a
+ * screen timed out with nobody there. Stop holding it and send it now.
+ * Same trust model as the priority tap: an id only the kiosk holds.
+ */
+app.post('/api/leads/:id/release', (req, res) => {
+    const lead = store.releaseHold(req.params.id);
+    if (!lead) return res.status(404).json({ error: 'No such enquiry.' });
     res.json({ ok: true });
     setImmediate(pushPending);
     setImmediate(pushMail);

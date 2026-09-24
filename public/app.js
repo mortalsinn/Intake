@@ -216,6 +216,15 @@
             // out loud, because the leads themselves look perfectly healthy.
             pill.textContent = '⚠ Leads received, notes blocked — see admin';
             pill.className = 'sync-pill dead';
+        } else if (serverStatus?.mail && serverStatus.mail.failed) {
+            // Code Compass leads go by email, so a refused email is as serious
+            // as a refused CRM write — and just as invisible from the booth
+            // unless it is said here.
+            pill.textContent = `⚠ ${serverStatus.mail.failed} Code Compass email(s) refused — see admin`;
+            pill.className = 'sync-pill dead';
+        } else if (serverStatus?.mail && !serverStatus.mail.configured && serverStatus.mail.pending) {
+            pill.textContent = `⚠ Code Compass email not set up — ${serverStatus.mail.pending} held securely`;
+            pill.className = 'sync-pill dead';
         } else if (serverStatus && serverStatus.counts.failed) {
             pill.textContent = `${serverStatus.counts.failed} declined by Zoho — see admin`;
             pill.className = 'sync-pill dead';
@@ -929,6 +938,22 @@
     // pocket; these only exist so an abandoned booth finds its way home.
     const QR_BAIL_MS = 5 * 60 * 1000;
     const THANKS_BAIL_MS = 2 * 60 * 1000;
+    // All three together must stay under the server's hold ceiling (HOLD_MS
+    // in lib/store.js), or a lead could be sent before staff can rate it.
+    // tests/hold.test.js reads these numbers and fails if they do not fit.
+    const STAFF_BAIL_MS = 25 * 1000;
+
+    /**
+     * Tell the server this lead is finished with, so it stops waiting for a
+     * priority and sends. Every path out of the post-submit screens that
+     * does not end in a rating must call this, or the lead waits for the
+     * server's safety ceiling instead.
+     */
+    function releaseLead(leadId) {
+        if (!leadId) return;
+        fetch(`/api/leads/${encodeURIComponent(leadId)}/release`, { method: 'POST' })
+            .catch(() => { /* offline: the server's ceiling sends it anyway */ });
+    }
 
     /** Step 1: the QR, on its own, going nowhere until it is tapped. */
     async function showQrStep(leadId, who) {
@@ -950,6 +975,7 @@
             clearTimeout(bail);
             panel.onclick = null;
             clearQr();
+            releaseLead(leadId);
             conceal(panel, showSplash);   // nobody there; do not leave a QR on screen
         }, QR_BAIL_MS);
 
@@ -969,6 +995,7 @@
         const bail = setTimeout(() => {
             clearTimeout(bail);
             panel.onclick = null;
+            releaseLead(leadId);
             conceal(panel, showSplash);   // nobody tapped, so nobody is holding it
         }, THANKS_BAIL_MS);
         panel.onclick = done;
@@ -987,25 +1014,29 @@
      */
     function askPriority(leadId, who) {
         const step = $('#staff-step');
-        if (!step) { showSplash(); return; }
+        if (!step) { releaseLead(leadId); showSplash(); return; }
         $('#staff-who').textContent = who
             ? `How should ${who} be followed up?`
             : 'How should this enquiry be followed up?';
 
-        const finish = () => {
+        // `rated` is false for Skip and for the timeout: the lead is then
+        // released without a priority. A rating releases it on the server.
+        const finish = (rated) => {
             clearTimeout(bail);
             step.onclick = null;
+            if (!rated) releaseLead(leadId);
             conceal(step, showSplash);
         };
         // If staff walk off mid-prompt, do not strand the booth on an
         // internal screen — fall back to the welcome.
-        const bail = setTimeout(finish, 25000);
+        const bail = setTimeout(() => finish(false), STAFF_BAIL_MS);
 
         step.onclick = (e) => {
             const btn = e.target.closest('button[data-rate]');
             if (btn) {
-                // Straight to the server: the lead has already been sent, so
-                // the priority catches up with it there, not in the queue.
+                // Straight to the server, where the lead is still being held
+                // for exactly this — the priority lands inside the same
+                // record and the same email, and releases it.
                 // Update the device's permanent copy as well, or its record of
             // this enquiry would be missing the priority forever.
             try {
@@ -1020,11 +1051,11 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ priority: btn.dataset.rate }),
-                }).catch(() => { /* the lead is already safe; priority is a bonus */ });
-                finish();
+                }).catch(() => { /* offline: the server's ceiling sends it, unrated */ });
+                finish(true);
                 return;
             }
-            if (e.target.closest('#staff-skip')) finish();
+            if (e.target.closest('#staff-skip')) finish(false);
         };
         reveal(step);
     }

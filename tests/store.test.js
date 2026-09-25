@@ -96,3 +96,29 @@ test('contest entries are counted apart from sales leads', () => {
     assert.equal(c.total, 2, 'only enquiries count as leads');
     assert.equal(c.contest, 1);
 });
+
+test('an email refused for setup stays on offer; one refused for its data does not', () => {
+    const store = createStore(tmp());
+    const kinds = new Set(['ribit']);
+    for (const id of ['setup', 'data']) {
+        store.addLead({ id, kind: 'ribit', fields: {} });
+        store.releaseHold(id);
+    }
+    store.updateMail('setup', { status: 'failed', setup: true, attempts: 3, lastTriedAt: new Date().toISOString(), error: 'Email refused (403): domain not verified' });
+    store.updateMail('data', { status: 'failed', attempts: 1, error: 'Email refused (422): bad reply_to' });
+    assert.deepEqual(store.pendingMail(kinds).map(l => l.id), ['setup'], 'offered again on the backoff clock');
+    assert.equal(store.mailCounts(kinds).failed, 2, 'still counted as refused, so the booth sees it');
+    assert.equal(store.requeueSetupMail(kinds), 1);
+    const m = store.getLeads().find(l => l.id === 'setup').mail;
+    assert.equal(m.attempts, 0, 'no backoff left to wait out');
+    assert.equal(m.lastTriedAt, undefined);
+});
+
+test('a setup refusal recorded before the flag existed is recognised by its status code', () => {
+    const store = createStore(tmp());
+    store.addLead({ id: 'old', kind: 'ribit', fields: {} });
+    store.releaseHold('old');
+    store.updateMail('old', { status: 'failed', attempts: 1, error: 'Email refused (403): The ribitos.com domain is not verified.' });
+    assert.equal(store.pendingMail(new Set(['ribit'])).length, 1);
+    assert.equal(store.requeueSetupMail(new Set(['ribit'])), 1);
+});

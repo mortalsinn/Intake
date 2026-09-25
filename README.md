@@ -25,8 +25,8 @@ free: device queue, append-only journal, server disk, dedupe, CSV, backoff.
 |---|---|---|
 | Spec | [config/form.json](config/form.json) | [config/ribit-form.json](config/ribit-form.json) |
 | `kind` | `enquiry` (+ `contest` for the draw) | `ribit` |
-| Lead Source | `Fall Home Show 2026` | `Fall Home Show 2026 - Code Compass` |
-| Goes to Zoho | yes | yes |
+| Lead Source | `Fall Home Show 2026` | none — never enters the CRM |
+| Delivered to | Zoho CRM (Leads) | email to info@ribitos.com, via Resend |
 | Inspiration gallery | yes | no — it is scraped from ironwoodstairs.com |
 | Awards, stair graphic | yes | no |
 
@@ -42,13 +42,41 @@ no list view filtered on source will ever show those leads. There is no error
 to catch. The CRM UI has no visible button for this, so:
 
 ```bash
-node scripts/add-lead-source.js "Fall Home Show 2026 - Code Compass"
+node scripts/add-lead-source.js "Fall Home Show 2026"
 ```
 
-Code Compass leads are deliberately left **unassigned** — `show.leadOwner` is
-absent from `ribit-form.json`, so they land on whoever owns the connected
-token. Ironwood's booth leads go to one named owner. Set a `leadOwner` for
-Ribit too if it should not simply follow the token.
+Code Compass is the exception: its leads never enter the CRM, so it has no
+Lead Source, owner or tag, and a test fails if it ever regains one.
+
+### Emailing Code Compass leads
+
+Each Code Compass demo request is emailed to `info@ribitos.com` through
+Resend's HTTP API. The visitor is never mailed; their address is the
+Reply-To. Set on the Render service that runs THIS app (env vars are per
+service; the RibitOS service's key does not reach it):
+
+- `RESEND_API_KEY` — required. Without it nothing is sent and leads wait.
+- `MAIL_FROM` — optional, default `RibitOS Home Show <info@ribitos.com>`.
+- `LEAD_EMAIL_TO` — optional, default `info@ribitos.com`.
+
+**The From address's domain must be verified in Resend** (resend.com →
+Domains), which means its DNS records must exist in Cloudflare: the
+`resend._domainkey` TXT record and the `send` MX and TXT records Resend
+shows. Until then Resend answers *403 — the domain is not verified* to
+every send. Check with:
+
+```bash
+dig +short TXT resend._domainkey.ribitos.com
+```
+
+Empty output means Resend cannot send as ribitos.com yet.
+
+A refusal of the account — a bad key (401) or an unverified domain (403) —
+is not the lead's fault, so the lead stays on disk, shows as refused on the
+admin page in Resend's own words, and keeps being retried on the backoff
+clock. **Send test email** on the admin page sends one message down the
+same path and shows Resend's exact answer; when it lands, everything held
+goes at once.
 
 ## How leads survive
 
@@ -204,12 +232,17 @@ the machine where you connected):
   Five wrong attempts locks that address out for fifteen minutes.
 - `ZOHO_CLIENT_ID`, `ZOHO_CLIENT_SECRET`, `ZOHO_REFRESH_TOKEN`
 - `ZOHO_DC` — `com` (or your datacenter)
+- `RESEND_API_KEY` — for Code Compass email; see *Emailing Code Compass leads*.
 
 `PORT` is set by Render automatically. Two operational notes:
 
-- Running on a **Starter instance**: no spin-down, no 50-second cold start,
-  and the disk survives restarts, so the enquiry log persists between
-  deploys.
+- Running on a **Starter instance**: no spin-down, no 50-second cold start.
+  **The disk does not survive by itself.** Every Render service's filesystem
+  is ephemeral: a deploy or a restart empties `data/`, taking `leads.json`
+  and the journal with it. Attach a Render persistent disk mounted at
+  `data/` (paid instances only), or treat the server copy as a staging
+  area — the iPad's own copy and Zoho/email are what outlive it. Export
+  the CSVs and the backup file from the admin page before any deploy.
 - **Still don't deploy during show hours.** A deploy restarts the process;
   anything mid-flight to Zoho is retried afterwards, but there is no reason
   to take the risk while a booth is running. Turn Auto-Deploy off.

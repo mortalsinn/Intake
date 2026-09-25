@@ -107,6 +107,9 @@
             mailLine.textContent = !m.configured
                 ? `Email not set up — ${m.pending || 0} held securely for ${m.to || 'info@ribitos.com'}`
                 : `${m.sent || 0} emailed to ${m.to}${m.pending ? `, ${m.pending} waiting` : ''}${m.failed ? `, ${m.failed} refused` : ''}`;
+            // A count of refusals says something is wrong; the reason says
+            // what. Resend's own words, so whoever reads it knows what to fix.
+            if (m.configured && m.failed && m.lastError) mailLine.textContent += ` — ${m.lastError}`;
         }
 
         $('#rows').innerHTML = s.leads.filter(l => (l.kind || 'enquiry') !== 'contest').map(l => {
@@ -161,6 +164,23 @@
             msg.textContent = r.retried
                 ? `Re-queued ${r.retried} item(s). They will transfer within a minute.`
                 : 'Nothing waiting — everything has already transferred.';
+        } catch {
+            msg.className = 'msg bad';
+            msg.textContent = 'Could not reach the server.';
+        }
+        refresh();
+    });
+
+    $('#btn-mail-test')?.addEventListener('click', async () => {
+        const msg = $('#mail-msg');
+        msg.className = 'msg';
+        msg.textContent = 'Sending…';
+        try {
+            const r = await (await api('/api/admin/mail/test', { method: 'POST', body: '{}' })).json();
+            msg.className = `msg ${r.ok ? 'ok' : 'bad'}`;
+            msg.textContent = r.ok
+                ? `✓ Sent to ${r.to} from ${r.from}. Check that inbox.${r.requeued ? ` ${r.requeued} held demo request(s) are being sent now.` : ''}`
+                : `✗ Not sent from ${r.from}: ${r.error}`;
         } catch {
             msg.className = 'msg bad';
             msg.textContent = 'Could not reach the server.';

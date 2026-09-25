@@ -348,6 +348,8 @@ app.get('/api/admin/status', requirePin, (req, res) => {
         mail: {
             configured: mail.canSend() && !store.isDemo(),
             to: mail.mailConfig().to,
+            from: mail.mailConfig().from,
+            lastError: store.lastMailError(MAIL_KINDS),
             ...store.mailCounts(MAIL_KINDS),
         },
         leads: store.getLeads().slice().reverse(),
@@ -495,6 +497,27 @@ app.post('/api/admin/retry', requirePin, (req, res) => {
     setImmediate(pushPhotos);
     setImmediate(pushMail);
     res.json({ ok: true, retried: n });
+});
+
+/**
+ * Send one test email down the exact path a Code Compass lead takes, and
+ * report Resend's answer word for word. "Email refused" on a badge tells
+ * nobody what to fix; "The ribitos.com domain is not verified" does.
+ *
+ * A test that lands proves the setup is now right, so anything refused for
+ * a setup reason is sent straight away rather than at its next backoff.
+ */
+app.post('/api/admin/mail/test', requirePin, async (req, res) => {
+    const { to, from } = mail.mailConfig();
+    if (store.isDemo()) return res.json({ ok: false, to, from, error: 'Demo mode: this build never sends email.' });
+    try {
+        const sent = await mail.sendLeadEmail(mail.buildTestEmail());
+        const requeued = store.requeueSetupMail(MAIL_KINDS);
+        setImmediate(pushMail);
+        res.json({ ok: true, to, from, id: sent.id, requeued });
+    } catch (err) {
+        res.json({ ok: false, to, from, error: err.message, setup: !!err.setup, notConfigured: !!err.notConfigured });
+    }
 });
 
 app.get('/api/admin/export.csv', requirePin, (req, res) => {
@@ -670,11 +693,14 @@ async function pushMail() {
                 const cfg = formConfig(lead.kind);
                 const message = mail.buildLeadEmail(lead, cfg, zoho.buildNote(lead, cfg).Note_Content);
                 const sent = await mail.sendLeadEmail(message);
-                store.updateMail(lead.id, { status: 'sent', sentAt: new Date().toISOString(), id: sent.id, error: undefined });
+                store.updateMail(lead.id, { status: 'sent', sentAt: new Date().toISOString(), id: sent.id, error: undefined, setup: undefined });
                 console.log(`[mail] ${lead.kind} lead ${lead.id} emailed to ${sent.to}`);
             } catch (err) {
                 store.updateMail(lead.id, {
                     status: err.permanent ? 'failed' : 'pending',
+                    // Refused for the account's setup, not the lead's data —
+                    // it keeps being offered and goes once that is fixed.
+                    setup: err.setup || undefined,
                     attempts: (m.attempts || 0) + 1,
                     lastTriedAt: new Date().toISOString(),
                     error: err.message,

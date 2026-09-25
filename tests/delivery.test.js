@@ -28,6 +28,8 @@ const realFetch = globalThis.fetch;
 const calls = [];
 let tagFailures = 0;
 let nextLead = 1000;
+// Set to a Resend error body to have every send refused with 403.
+let resendRefusal = null;
 const reply = (body, status = 200) => ({ ok: status < 300, status, json: async () => body, text: async () => JSON.stringify(body) });
 
 globalThis.fetch = async (url, opts = {}) => {
@@ -42,7 +44,9 @@ globalThis.fetch = async (url, opts = {}) => {
         if (tagFailures > 0) { tagFailures--; return reply({ data: [{ status: 'error', code: 'INVALID_DATA', message: 'nope' }] }); }
         return reply({ data: [{ status: 'success', details: {} }] });
     }
-    if (u.startsWith('https://api.resend.com')) return reply({ id: 'em1' });
+    if (u.startsWith('https://api.resend.com')) {
+        return resendRefusal ? reply(resendRefusal, 403) : reply({ id: 'em1' });
+    }
     throw new Error(`unexpected outbound request: ${u}`);
 };
 
@@ -120,4 +124,30 @@ test('skipping the priority releases the lead straight away, unrated', async () 
     assert.strictEqual(res.status, 200);
     assert.ok(await until(async () => (await leadOf('cc2')).mail?.status === 'sent'));
     assert.strictEqual((await post('/api/leads/nope/release')).status, 404);
+});
+
+test('refused for an unverified domain: held, shown in Resend\'s words, and sent the moment a test email proves it fixed', async () => {
+    resendRefusal = { statusCode: 403, name: 'validation_error', message: 'The ribitos.com domain is not verified. Please, add and verify your domain on https://resend.com/domains' };
+    await post('/api/leads', visitor('cc3', 'ribit'));
+    await post('/api/leads/cc3/release');
+    assert.ok(await until(async () => (await leadOf('cc3')).mail?.status === 'failed'), 'refused');
+    const s1 = await status();
+    assert.match(s1.mail.lastError, /domain is not verified/, 'the admin page is told WHY, not just that');
+    assert.strictEqual((await leadOf('cc3')).mail.setup, true, 'a setup refusal, not a bad lead');
+
+    // Still refused: the test says so, word for word, and nothing moves.
+    const t1 = await (await post('/api/admin/mail/test')).json();
+    assert.strictEqual(t1.ok, false);
+    assert.match(t1.error, /domain is not verified/);
+    assert.strictEqual(t1.from, 'RibitOS Home Show <info@ribitos.com>');
+
+    // The domain is verified in Resend. One test email, and the held lead goes.
+    resendRefusal = null;
+    const t2 = await (await post('/api/admin/mail/test')).json();
+    assert.strictEqual(t2.ok, true);
+    assert.strictEqual(t2.requeued, 1);
+    assert.ok(await until(async () => (await leadOf('cc3')).mail?.status === 'sent'), 'sent without anybody pressing Retry');
+    assert.strictEqual((await leadOf('cc3')).mail.setup, undefined);
+    const test = of(c => c.url.startsWith('https://api.resend.com') && /test email/.test(c.body.subject));
+    assert.deepStrictEqual(test.at(-1).body.to, ['info@ribitos.com'], 'the test goes where the leads go');
 });

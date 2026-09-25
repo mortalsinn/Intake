@@ -49,6 +49,15 @@ test('a refused key is permanent; a rate limit is not', async () => {
     await assert.rejects(sendLeadEmail(message, { fetchImpl: reply(429), env: { RESEND_API_KEY: 'k' } }), (e) => e.permanent === false);
 });
 
+test('a bad key or an unverified domain is a SETUP refusal; bad data is not', async () => {
+    const reply = (status) => async () => ({ ok: false, status, json: async () => ({ message: 'x' }) });
+    for (const status of [401, 403]) {
+        await assert.rejects(sendLeadEmail(message, { fetchImpl: reply(status), env: { RESEND_API_KEY: 'k' } }), (e) => e.setup === true);
+    }
+    await assert.rejects(sendLeadEmail(message, { fetchImpl: reply(422), env: { RESEND_API_KEY: 'k' } }), (e) => e.setup === false);
+    await assert.rejects(sendLeadEmail(message, { fetchImpl: reply(429), env: { RESEND_API_KEY: 'k' } }), (e) => e.setup === false);
+});
+
 test('the default recipient is info@ribitos.com', () => {
     assert.strictEqual(mailConfig({}).to, 'info@ribitos.com');
 });

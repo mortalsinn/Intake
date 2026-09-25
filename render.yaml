@@ -21,3 +21,5 @@ services:
         sync: false
       - key: ZOHO_DC
         value: com
+      - key: RESEND_API_KEY
+        sync: false       # Code Compass leads are emailed; the From domain must be verified in Resend
